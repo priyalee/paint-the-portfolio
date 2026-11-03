@@ -1,0 +1,127 @@
+<div class="dock" role="toolbar" aria-label="Paint tools">
+  <button
+    type="button"
+    class="collapse"
+    (click)="collapsed.set(!collapsed())"
+    [attr.aria-expanded]="!collapsed()"
+    [attr.aria-label]="collapsed() ? 'Open paint tools' : 'Hide paint tools'"
+    [title]="collapsed() ? 'Open paint tools' : 'Hide paint tools'"
+  >
+    <span class="current" [style.background]="state.activeColor().hex"></span>
+    <app-icon name="palette" />
+  </button>
+
+  <div class="body">
+    <div class="group tools">
+      <button
+        type="button"
+        class="tool"
+        [class.active]="state.tool() === 'bucket'"
+        [attr.aria-pressed]="state.tool() === 'bucket'"
+        (click)="state.setTool('bucket')"
+        title="Paint bucket (B)"
+        aria-label="Paint bucket"
+      >
+        <app-icon name="bucket" />
+      </button>
+      <button
+        type="button"
+        class="tool"
+        [class.active]="state.tool() === 'roller'"
+        [attr.aria-pressed]="state.tool() === 'roller'"
+        (click)="useRoller()"
+        title="Roller — paint the whole screen (R)"
+        aria-label="Roller: paint the whole screen"
+      >
+        <app-icon name="roller" />
+      </button>
+      <button
+        type="button"
+        class="tool"
+        [class.active]="state.tool() === 'eraser'"
+        [attr.aria-pressed]="state.tool() === 'eraser'"
+        (click)="state.setTool('eraser')"
+        title="Eraser (E) — click a shape, or an empty spot to wash the screen"
+        aria-label="Eraser"
+      >
+        <app-icon name="eraser" />
+      </button>
+      @if (state.background() !== null) {
+        <button
+          type="button"
+          class="tool"
+          (click)="state.paintBackground(null, $event)"
+          title="Back to plain paper"
+          aria-label="Wash the screen back to plain paper"
+        >
+          <app-icon name="paper" />
+        </button>
+      }
+    </div>
+
+    <div class="group swatches" [class.flash]="moodFlash()">
+      @for (c of state.palette().colors; track $index) {
+        <button
+          type="button"
+          class="swatch"
+          [style.--c]="c.hex"
+          [class.active]="state.slot() === $index && state.tool() === 'bucket'"
+          [attr.aria-pressed]="state.slot() === $index"
+          (click)="state.selectSlot($index)"
+          [attr.aria-label]="c.name"
+          [title]="c.name + ' (' + ($index + 1) + ')'"
+        ></button>
+      }
+    </div>
+
+    <div class="group mood-group">
+      <button
+        type="button"
+        class="mood"
+        (click)="shuffle()"
+        title="Shuffle to a new palette mood (M)"
+        [attr.aria-label]="'Shuffle palette (now ' + state.palette().name + ')'"
+      >
+        <app-icon name="dice" />
+        <span class="mood-name">{{ state.palette().name }}</span>
+      </button>
+    </div>
+
+    <div class="group">
+      <button
+        type="button"
+        class="tool"
+        (click)="state.undo()"
+        [disabled]="!state.canUndo()"
+        title="Undo (Ctrl+Z)"
+        aria-label="Undo"
+      >
+        <app-icon name="undo" />
+      </button>
+      <button
+        type="button"
+        class="tool"
+        (click)="state.redo()"
+        [disabled]="!state.canRedo()"
+        title="Redo (Ctrl+Shift+Z)"
+        aria-label="Redo"
+      >
+        <app-icon name="redo" />
+      </button>
+      <button
+        type="button"
+        class="tool postcard"
+        (click)="postcard.open()"
+        [disabled]="postcard.busy()"
+        title="Make a postcard of your painting"
+        aria-label="Make a postcard of your painting"
+      >
+        <app-icon name="postcard" />
+      </button>
+    </div>
+  </div>
+
+  @if (hint() || postcard.lastMessage()) {
+    <p class="toast" role="status">{{ hint() || postcard.lastMessage() }}</p>
+  }
+</div>

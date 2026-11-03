@@ -1,0 +1,19 @@
+<div
+  class="stage"
+  #stage
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp()"
+  (pointerleave)="onPointerUp()"
+  (pointercancel)="onPointerUp()"
+>
+  <svg #mono class="art mono" [attr.viewBox]="art().viewBox" aria-hidden="true">
+    @for (s of art().shapes; track s.id) {
+      <path [attr.d]="s.d" [class.line]="s.slot === 'line'" />
+    }
+  </svg>
+  <canvas
+    #canvas
+    [attr.aria-label]="art().title + ' sketch. Move your cursor or finger over it to brush colour in.'"
+  ></canvas>
+</div>

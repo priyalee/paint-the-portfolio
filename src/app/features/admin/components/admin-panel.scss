@@ -1,0 +1,136 @@
+// Shared styles for the admin panels.
+
+:host {
+  display: grid;
+  gap: 16px;
+}
+
+p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.error,
+.ok {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+.error {
+  background: #c0392b;
+  color: #fff;
+}
+.ok {
+  border: 2px solid var(--ink);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filters {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  justify-self: start;
+
+  button {
+    min-height: 38px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+
+    &.active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+  }
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul:not(.rows) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 20px;
+}
+
+.card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+
+  img,
+  .img-missing {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+  }
+  .img-missing {
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+  }
+}
+
+.msg {
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+}
+
+.rows li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1.5px dashed var(--line);
+}
+
+.dot {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+
+.who {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+kbd {
+  padding: 1px 6px;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  font-size: 0.85em;
+}
+
+@media (max-width: 600px) {
+  .rows li {
+    flex-wrap: wrap;
+  }
+}

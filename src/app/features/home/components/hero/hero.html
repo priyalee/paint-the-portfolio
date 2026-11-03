@@ -1,0 +1,55 @@
+<section class="hero container" id="top">
+  <div class="copy">
+    <span class="eyebrow">Portfolio · {{ data().location }}</span>
+    <h1>
+      Hi, I'm <span class="name">{{ data().name }}</span>
+    </h1>
+    <p class="role">{{ data().role }}</p>
+    <p class="lede">{{ data().tagline }}</p>
+
+    <div class="ctas">
+      <a class="btn" routerLink="/work">See my work <app-icon name="arrow" /></a>
+      <a class="btn btn-ghost" routerLink="/studio">Open the studio</a>
+    </div>
+
+    <ol class="how">
+      <li><span>1</span> Pick a pigment from the dock below</li>
+      <li><span>2</span> Click any outlined shape to flood it</li>
+      <li><span>3</span> Or flip the whole site to <em>Colour</em></li>
+    </ol>
+  </div>
+
+  <figure class="frame">
+    <span class="tape tape-a" aria-hidden="true"></span>
+    <span class="tape tape-b" aria-hidden="true"></span>
+
+    <app-brush-reveal [art]="art" />
+
+    <figcaption>
+      @if (state.mode() === 'color') {
+        <span class="hand">Full colour — switch back to Mono to brush it yourself</span>
+      } @else if (brush().coverage() >= 0.9) {
+        <span class="hand"><app-icon name="check" /> Fully painted</span>
+      } @else if (brush().touched()) {
+        <span class="hand">
+          Keep going — {{ brush().coverage() * 100 | number: '1.0-0' }}% brushed
+        </span>
+      } @else {
+        <span class="hand"><app-icon name="brush" /> Brush over the sketch to paint it</span>
+      }
+      <span class="cap-actions">
+        <button
+          type="button"
+          class="link-btn"
+          (click)="brush().wash()"
+          [disabled]="!brush().touched()"
+        >
+          Wash it off
+        </button>
+        @if (state.mode() === 'mono') {
+          <button type="button" class="link-btn" (click)="revealAll($event)">Reveal all</button>
+        }
+      </span>
+    </figcaption>
+  </figure>
+</section>

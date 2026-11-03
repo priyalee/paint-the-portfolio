@@ -1,0 +1,50 @@
+@let p = project();
+<div class="inner">
+  <!-- FRONT: paintable swatch -->
+  <div class="face front" [inert]="flipped()">
+    <svg class="art swatch" viewBox="0 0 300 170" preserveAspectRatio="none">
+      <rect
+        x="0"
+        y="0"
+        width="300"
+        height="170"
+        vector-effect="non-scaling-stroke"
+        [appPaintable]="regionId()"
+        [trueColor]="p.slot"
+        [label]="p.title + ' colour chip'"
+      />
+    </svg>
+    <div class="meta">
+      <div class="row">
+        <span class="no">No. {{ index() + 1 | number: '2.0-0' }}</span>
+        <span class="no">{{ p.year }}</span>
+      </div>
+      <span class="colour">{{ colourName() }}</span>
+      <h3>{{ p.title }}</h3>
+      <p class="tagline">{{ p.tagline }}</p>
+      <button type="button" class="flip" (click)="flipped.set(true)" [attr.aria-expanded]="flipped()">
+        Details <app-icon name="flip" />
+      </button>
+    </div>
+  </div>
+
+  <!-- BACK: details -->
+  <div class="face back" [inert]="!flipped()">
+    <span class="no">No. {{ index() + 1 | number: '2.0-0' }} · {{ p.year }}</span>
+    <h3>{{ p.title }}</h3>
+    <p>{{ p.description }}</p>
+    <ul class="tech">
+      @for (t of p.tech; track $index) {
+        <li class="tag">{{ t }}</li>
+      }
+    </ul>
+    <div class="links">
+      @for (l of p.links; track $index) {
+        <a [href]="l.url" target="_blank" rel="noopener">{{ l.label }} <app-icon name="external" /></a>
+      }
+    </div>
+    <button type="button" class="flip" (click)="flipped.set(false)">
+      Back to swatch <app-icon name="flip" />
+    </button>
+  </div>
+</div>

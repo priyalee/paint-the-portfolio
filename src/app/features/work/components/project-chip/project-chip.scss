@@ -1,0 +1,154 @@
+:host {
+  display: block;
+  perspective: 1400px;
+  min-height: 430px;
+}
+
+:host(.tilt-left) .inner {
+  transform: rotate(-0.8deg);
+}
+:host(.tilt-right) .inner {
+  transform: rotate(0.8deg);
+}
+:host(.flipped) .inner {
+  transform: rotateY(180deg);
+}
+
+.inner {
+  position: relative;
+  height: 100%;
+  min-height: 430px;
+  transform-style: preserve-3d;
+  transition: transform 0.8s var(--ease);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 6px 6px 0 var(--ink);
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.front {
+  .swatch {
+    --sw: 0;
+    display: block;
+    width: 100%;
+    height: 200px;
+    flex: none;
+    border-bottom: 2px solid var(--ink);
+  }
+  .swatch rect {
+    stroke: none;
+  }
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  padding: 16px 18px 18px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.no {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.colour {
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+
+h3 {
+  font-size: 1.45rem;
+  margin-top: 4px;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.flip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 8px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+}
+
+.back {
+  transform: rotateY(180deg);
+  gap: 12px;
+  padding: 22px 20px 20px;
+  overflow-y: auto;
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+}
+
+.tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    text-underline-offset: 3px;
+
+    @media (pointer: coarse) {
+      min-height: 44px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inner {
+    transition: none;
+  }
+}

@@ -1,0 +1,252 @@
+// Shared form styles for every editor tab (styleUrl of each tab component).
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+h3 {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+  cursor: pointer;
+
+  &[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  > span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  &.narrow {
+    flex: 0 0 96px;
+  }
+}
+
+input:not([type='range']):not([type='file']),
+textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+
+  &:focus {
+    outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    outline-offset: 0;
+  }
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  &.wrap {
+    flex-wrap: wrap;
+  }
+  > .field {
+    flex: 1;
+  }
+  > input {
+    flex: 1;
+  }
+}
+
+.narrow-input {
+  flex: 0 0 110px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.num {
+  font-family: var(--font-display);
+}
+
+.item {
+  display: grid;
+  gap: 6px;
+}
+
+.item-tools {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.row button:not(.btn),
+.item-tools button,
+.skill button {
+  flex: none;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+button.danger {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+button.small {
+  padding: 0;
+  width: 32px;
+}
+
+.add {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 1.5px dashed var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-style: solid;
+  }
+}
+
+.group {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 14px;
+}
+
+.group-name {
+  font-weight: 700;
+}
+
+.skill {
+  display: grid;
+  grid-template-columns: 1fr 110px 44px 32px;
+  gap: 8px;
+  align-items: center;
+
+  input[type='range'] {
+    accent-color: var(--ink);
+  }
+}
+
+.lvl {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.slots {
+  display: flex;
+  gap: 8px;
+}
+
+.slot {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  cursor: pointer;
+
+  &.active {
+    box-shadow:
+      0 0 0 3px var(--paper),
+      0 0 0 5px var(--ink);
+  }
+}
+
+.tip {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.card-block {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1.5px solid var(--ink);
+  border-radius: 14px;
+
+  h3 {
+    margin: 0;
+    color: var(--ink);
+  }
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 4px;
+}
+
+.file {
+  position: relative;
+  overflow: hidden;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+code {
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--paper-2);
+}
+

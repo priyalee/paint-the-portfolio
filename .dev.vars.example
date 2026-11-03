@@ -1,0 +1,5 @@
+ADMIN_KEY=choose-a-long-password
+IP_SALT=any-long-random-string
+# Optional: email me new postcards
+# RESEND_API_KEY=
+# NOTIFY_EMAIL=

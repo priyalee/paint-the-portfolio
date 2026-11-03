@@ -1,0 +1,22 @@
+@let c = chapter();
+<a class="chapter" [routerLink]="'/' + c.path">
+  <span class="blob" [style.background]="blob()" aria-hidden="true"></span>
+  <span class="no">{{ c.no }}</span>
+  <span class="title">{{ c.label }}</span>
+  <span class="blurb">{{ c.blurb }}</span>
+  <span class="status">
+    @if (progress(); as p) {
+      <span class="bar" aria-hidden="true"><span [style.width.%]="p.ratio * 100"></span></span>
+      <span class="count">
+        @if (done()) {
+          <app-icon name="check" /> Painted
+        } @else {
+          {{ p.painted }} / {{ p.total }} painted
+        }
+      </span>
+    } @else {
+      <span class="count">{{ c.path === 'wall' ? 'Add your colour' : 'Free play' }}</span>
+    }
+    <app-icon name="arrow" class="arrow" />
+  </span>
+</a>

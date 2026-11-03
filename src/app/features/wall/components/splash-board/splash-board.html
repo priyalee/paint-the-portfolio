@@ -1,0 +1,78 @@
+<div class="card canvas-wrap" appReveal appPostcardSource="wall-splash" postcardSelect="svg">
+  <app-splash-canvas
+    [splashes]="shown()"
+    [pending]="pending()"
+    [pendingColor]="state.activeColor().hex"
+    [locked]="!!signedId()"
+    (drop)="throwAt($event)"
+  />
+  <div class="meter-row">
+    <span class="count">
+      {{ splashes().length }} {{ splashes().length === 1 ? 'splash' : 'splashes' }} on the wall
+    </span>
+  </div>
+</div>
+
+<div class="below" appReveal>
+  <div class="card panel">
+    @if (editing() && mine(); as m) {
+      <app-sign-form
+        [heading]="'A ' + state.activeColor().name + ' splash'"
+        [color]="state.activeColor().hex"
+        hint="Pick a new colour in the dock to repaint your splash, or fix your name."
+        submitLabel="Save changes"
+        cancelLabel="Cancel"
+        [initial]="m"
+        [saving]="saving()"
+        (sign)="saveEdit($event)"
+        (cancel)="editing.set(false)"
+      />
+    } @else if (signedId()) {
+      <h3><app-icon name="check" /> Thanks{{ mine() ? ', ' + mine()!.name : '' }}!</h3>
+      <p>
+        Your splash is on the wall. Tap or hover it to see your signature — and come back to see who
+        splashed next to you.
+      </p>
+      @if (mine()) {
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" (click)="editing.set(true)">
+            <app-icon name="edit" /> Edit my splash
+          </button>
+        </div>
+      }
+    } @else if (pending()) {
+      <app-sign-form
+        [heading]="'A ' + state.activeColor().name + ' splash'"
+        [color]="state.activeColor().hex"
+        hint="Not quite right? Click the wall again to throw it somewhere else, or change the colour in the dock."
+        submitLabel="Sign my splash"
+        cancelLabel="Wipe it off"
+        [saving]="saving()"
+        (sign)="sign($event)"
+        (cancel)="pending.set(null)"
+      />
+    } @else {
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li><span>1</span> Choose a colour in the paint dock below.</li>
+        <li><span>2</span> Click anywhere on the wall to throw your paint.</li>
+        <li><span>3</span> Add your name and sign it — one splash per visitor.</li>
+      </ol>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" (click)="throwRandom()">
+          <app-icon name="dice" /> Throw at a random spot
+        </button>
+      </div>
+    }
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+  </div>
+
+  <div class="card panel">
+    <app-recent-artists [marks]="splashes()" />
+    @if (!splashes().length) {
+      <p class="muted">The wall is still clean — be the first to splash it.</p>
+    }
+  </div>
+</div>

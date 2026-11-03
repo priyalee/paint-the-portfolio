@@ -1,0 +1,67 @@
+<nav class="bar container" aria-label="Main">
+  <a class="brand" routerLink="/" (click)="menuOpen.set(false)" aria-label="Home">
+    <span class="blob" aria-hidden="true">{{ data().initials }}</span>
+    <span class="brand-name">{{ data().name }}</span>
+  </a>
+
+  <ul class="links" [class.open]="menuOpen()" id="nav-links">
+    @for (link of links; track link.path) {
+      <li>
+        <a
+          [routerLink]="'/' + link.path"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          [class.studio-link]="link.path === 'studio'"
+          (click)="menuOpen.set(false)"
+          >{{ link.label }}</a
+        >
+      </li>
+    }
+  </ul>
+
+  <div class="actions">
+    @if (percent() !== null) {
+      <div
+        class="progress"
+        [title]="percent() + '% of the site painted'"
+        role="status"
+        [attr.aria-label]="percent() + ' percent of the site painted'"
+      >
+        <span class="progress-fill" [style.width.%]="percent()"></span>
+        <span class="progress-label">{{ percent() }}% painted</span>
+      </div>
+    }
+
+    <button
+      type="button"
+      class="icon-btn"
+      (click)="state.toggleTheme($event)"
+      [attr.aria-label]="state.theme() === 'paper' ? 'Switch to chalk (dark) theme' : 'Switch to paper (light) theme'"
+      [title]="state.theme() === 'paper' ? 'Chalk mode' : 'Paper mode'"
+    >
+      <app-icon [name]="state.theme() === 'paper' ? 'moon' : 'sun'" />
+    </button>
+
+    <button
+      type="button"
+      class="mode-toggle"
+      (click)="state.toggleMode($event)"
+      [attr.aria-pressed]="state.mode() === 'color'"
+      title="Switch between black-and-white and full colour"
+    >
+      <span class="mode-dot" aria-hidden="true"></span>
+      <span class="mode-text">{{ state.mode() === 'mono' ? 'Mono' : 'Colour' }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="icon-btn menu-btn"
+      (click)="menuOpen.set(!menuOpen())"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="nav-links"
+      aria-label="Menu"
+    >
+      <app-icon [name]="menuOpen() ? 'close' : 'menu'" />
+    </button>
+  </div>
+</nav>

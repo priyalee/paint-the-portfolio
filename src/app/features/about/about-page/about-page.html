@@ -1,0 +1,18 @@
+<section class="section" id="about">
+  <div class="container grid">
+    <app-portrait-card appReveal />
+
+    <div class="text" appReveal>
+      <app-section-header eyebrow="01 — About" before="A little" accent="about" after="me" />
+      @for (p of data().about; track $index) {
+        <p class="lede">{{ p }}</p>
+      }
+      <app-fact-list [facts]="data().facts" />
+      @if (data().resumeUrl) {
+        <a class="btn" [href]="data().resumeUrl" target="_blank" rel="noopener">
+          <app-icon name="download" /> Download résumé
+        </a>
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,18 @@
+<app-hero />
+
+<section class="section" id="chapters">
+  <div class="container">
+    <app-section-header
+      eyebrow="The sketchbook"
+      before="Pick a page to"
+      accent="paint"
+      note="Every page is its own little colouring book."
+    />
+
+    <ol class="grid">
+      @for (c of chapters; track c.path; let i = $index) {
+        <li appReveal><app-chapter-card [chapter]="c" [index]="i" /></li>
+      }
+    </ol>
+  </div>
+</section>

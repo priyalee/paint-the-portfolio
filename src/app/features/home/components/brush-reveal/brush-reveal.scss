@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+.stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 28c0-4 2-6 5-6s4 2 3 4-5 3-8 2z' fill='%23161513'/%3E%3Cpath d='M11 21L26 6l2 2-15 15' fill='%23fff' stroke='%23161513' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E")
+      4 28,
+    crosshair;
+  touch-action: pan-y;
+
+  svg,
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  canvas {
+    pointer-events: none;
+  }
+}
+
+.mono {
+  --sw: 3;
+}

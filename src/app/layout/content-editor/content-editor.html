@@ -1,0 +1,61 @@
+@if (store.editorOpen()) {
+  <div class="scrim" (click)="close()" aria-hidden="true"></div>
+  <aside class="panel" role="dialog" aria-modal="false" aria-labelledby="editor-title">
+    <header class="head">
+      <div>
+        <h2 id="editor-title">Edit content</h2>
+        <p class="sub">
+          @if (store.hasDraft()) {
+            <span class="badge">Draft</span> autosaved in this browser only
+          } @else {
+            Showing published content
+          }
+        </p>
+      </div>
+      <button type="button" class="icon-btn" (click)="close()" aria-label="Close editor">
+        <app-icon name="close" />
+      </button>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      @for (t of tabs; track t.id) {
+        <button
+          type="button"
+          role="tab"
+          [class.active]="tab() === t.id"
+          [attr.aria-selected]="tab() === t.id"
+          (click)="tab.set(t.id)"
+        >
+          {{ t.label }}
+        </button>
+      }
+    </nav>
+
+    <div class="body" role="tabpanel">
+      @switch (tab()) {
+        @case ('basics') { <app-basics-tab /> }
+        @case ('about') { <app-about-tab /> }
+        @case ('skills') { <app-skills-tab /> }
+        @case ('projects') { <app-projects-tab /> }
+        @case ('journey') { <app-journey-tab /> }
+        @case ('links') { <app-links-tab /> }
+        @case ('files') { <app-files-tab /> }
+      }
+    </div>
+
+    @if (session.message(); as m) {
+      <p class="message" [class.error]="m.kind === 'error'" role="status">{{ m.text }}</p>
+    }
+
+    <footer class="foot">
+      <span>Ctrl + Alt + E toggles this panel</span>
+      <button type="button" class="done" (click)="close()">Done</button>
+    </footer>
+  </aside>
+}
+
+@if (store.hasDraft() && !store.editorOpen()) {
+  <button type="button" class="draft-pill" (click)="store.editorOpen.set(true)">
+    <span class="badge">Draft</span> preview · edit
+  </button>
+}

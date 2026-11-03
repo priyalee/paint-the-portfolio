@@ -1,0 +1,30 @@
+.switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: clamp(18px, 3vw, 26px);
+  padding: 4px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 18px;
+    border-radius: 999px;
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.25s var(--ease), color 0.25s var(--ease);
+
+    &:hover:not(.active) {
+      background: color-mix(in srgb, var(--ink) 8%, transparent);
+    }
+    &.active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+  }
+}

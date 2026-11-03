@@ -1,0 +1,74 @@
+<div class="card canvas-wrap" appReveal appPostcardSource="wall-mural" postcardSelect="svg">
+  <app-mural-canvas
+    [art]="art"
+    [claims]="claimMap()"
+    [pending]="pending()?.id ?? null"
+    [pendingColor]="state.activeColor().hex"
+    [locked]="!!signedRegion()"
+    (pick)="onPick($event)"
+  />
+  <div class="meter-row">
+    <div class="meter" role="progressbar" [attr.aria-valuenow]="percent()" aria-valuemin="0" aria-valuemax="100">
+      <span [style.width.%]="percent()"></span>
+    </div>
+    <span class="count">{{ claims().length }} of {{ total }} shapes painted by visitors</span>
+  </div>
+</div>
+
+<div class="below" appReveal>
+  <div class="card panel">
+    @if (editing() && mine(); as m) {
+      <app-sign-form
+        [heading]="mineLabel() + ' in ' + state.activeColor().name"
+        [color]="state.activeColor().hex"
+        hint="Pick a new colour in the dock to repaint your shape, or fix your name."
+        submitLabel="Save changes"
+        cancelLabel="Cancel"
+        [initial]="m"
+        [saving]="saving()"
+        (sign)="saveEdit($event)"
+        (cancel)="editing.set(false)"
+      />
+    } @else if (signedRegion()) {
+      <h3><app-icon name="check" /> Thanks{{ mine() ? ', ' + mine()!.name : '' }}!</h3>
+      <p>
+        You painted <strong>{{ mineLabel() }}</strong>. Tap or hover it on the mural to see your
+        signature — and come back to watch the city fill up.
+      </p>
+      @if (mine()) {
+        <div class="actions">
+          <button type="button" class="btn btn-ghost" (click)="editing.set(true)">
+            <app-icon name="edit" /> Edit my shape
+          </button>
+        </div>
+      }
+    } @else if (pending(); as p) {
+      <app-sign-form
+        [heading]="p.label + ' in ' + state.activeColor().name"
+        [color]="state.activeColor().hex"
+        submitLabel="Sign my shape"
+        cancelLabel="Pick another"
+        [saving]="saving()"
+        (sign)="sign($event)"
+        (cancel)="pending.set(null)"
+      />
+    } @else {
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li><span>1</span> Choose a colour in the paint dock below.</li>
+        <li><span>2</span> Click any blank shape on the mural.</li>
+        <li><span>3</span> Add your name and sign it — one shape per visitor.</li>
+      </ol>
+    }
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+  </div>
+
+  <div class="card panel">
+    <app-recent-artists [marks]="claims()" />
+    @if (!claims().length) {
+      <p class="muted">No painters yet — be the first to add colour to the city.</p>
+    }
+  </div>
+</div>

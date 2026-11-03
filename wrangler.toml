@@ -1,0 +1,17 @@
+# Cloudflare Pages project: the built Angular site + the /api functions + a D1 database.
+name = "ink-pigment"
+pages_build_output_dir = "dist/port/browser"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ink-pigment"
+database_id = "462cc1b2-2e9f-4a57-8403-1fa42070d972"
+migrations_dir = "migrations"
+
+# Secrets are never stored here. Set them with:
+#   npx wrangler pages secret put ADMIN_KEY      (required for /admin)
+#   npx wrangler pages secret put IP_SALT        (any long random string)
+#   npx wrangler pages secret put RESEND_API_KEY (optional: email me new postcards)
+#   npx wrangler pages secret put NOTIFY_EMAIL   (optional: where to send them)
+# For local development put the same names in a .dev.vars file (git-ignored).

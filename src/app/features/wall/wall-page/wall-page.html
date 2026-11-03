@@ -1,0 +1,30 @@
+<section class="section" id="wall">
+  <div class="container">
+    <app-section-header eyebrow="05 — Community wall" before="Leave your" accent="mark" [note]="note()" />
+
+    <nav class="switch" aria-label="Choose a wall">
+      <a
+        routerLink="."
+        [queryParams]="{ view: null }"
+        [class.active]="view() === 'mural'"
+        [attr.aria-current]="view() === 'mural' ? 'page' : null"
+      >
+        <app-icon name="city" /> Mural
+      </a>
+      <a
+        routerLink="."
+        [queryParams]="{ view: 'splash' }"
+        [class.active]="view() === 'splash'"
+        [attr.aria-current]="view() === 'splash' ? 'page' : null"
+      >
+        <app-icon name="splotch" /> Splash wall
+      </a>
+    </nav>
+
+    @if (view() === 'splash') {
+      <app-splash-board />
+    } @else {
+      <app-mural-board />
+    }
+  </div>
+</section>

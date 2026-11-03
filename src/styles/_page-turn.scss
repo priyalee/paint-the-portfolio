@@ -1,0 +1,275 @@
+/* ==========================================================================
+   Sketchbook page turns between routes (View Transitions).
+   core/page-turn.ts puts `page-transition` + data-page-turn="forward|back|fade"
+   on <html> for router navigations only; theme / mode sweeps never get them.
+
+   forward  the old page lifts off the spine and turns right-to-left,
+            revealing the new page underneath.
+   back     the previous page swings back over from the spine, left-to-right,
+            settling on top of the current one.
+   fade     reduced motion / same page / first load: a quick crossfade.
+   ========================================================================== */
+
+$turn: 0.82s;
+$turn-phone: 0.52s;
+$lift: cubic-bezier(0.5, 0.05, 0.6, 0.95);
+$land: cubic-bezier(0.25, 0.45, 0.3, 1);
+
+/* The sheen / shade that rides on the turning leaf (see .page-leaf). */
+.page-leaf {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Fixed chrome gets its own snapshot so it stays still while the page turns.
+   Named only during a route change, so theme sweeps still sweep across it. */
+html.page-transition {
+  app-navbar {
+    view-transition-name: site-nav;
+  }
+  app-paint-dock {
+    view-transition-name: paint-dock;
+  }
+  app-sketch-spine {
+    view-transition-name: sketch-spine;
+  }
+  .draft-pill {
+    view-transition-name: draft-pill;
+  }
+}
+html[data-page-turn='forward'] .page-leaf,
+html[data-page-turn='back'] .page-leaf {
+  display: block;
+  view-transition-name: page-leaf;
+}
+
+/* ------------------------------------------------------------- forward */
+
+html[data-page-turn='forward'] {
+  &::view-transition-old(root) {
+    z-index: 2;
+    transform-origin: 0 50%;
+    animation:
+      leaf-lift $turn $lift both,
+      leaf-light-out $turn ease-in both;
+  }
+  &::view-transition-new(root) {
+    z-index: 1;
+    animation: under-page-clear $turn ease-out both;
+  }
+  &::view-transition-group(page-leaf) {
+    transform-origin: 0 50%;
+    animation:
+      leaf-lift $turn $lift both,
+      sheen-sweep $turn ease-in-out both;
+  }
+}
+
+/* --------------------------------------------------------------- back */
+
+html[data-page-turn='back'] {
+  &::view-transition-new(root) {
+    z-index: 2;
+    transform-origin: 0 50%;
+    animation:
+      leaf-land $turn $land both,
+      leaf-light-in $turn ease-out both;
+  }
+  &::view-transition-old(root) {
+    z-index: 1;
+    animation: under-page-cover $turn ease-in both;
+  }
+  &::view-transition-group(page-leaf) {
+    transform-origin: 0 50%;
+    animation:
+      leaf-land $turn $land both,
+      sheen-sweep $turn ease-in-out reverse both;
+  }
+}
+
+/* The leaf overlay is an empty box: its group's own background is the light. */
+html[data-page-turn]::view-transition-group(page-leaf) {
+  background: linear-gradient(
+    90deg,
+    transparent 0 30%,
+    rgb(255 255 255 / 0.3) 42%,
+    rgb(255 255 255 / 0.05) 49%,
+    rgb(0 0 0 / 0.14) 57%,
+    transparent 66% 100%
+  );
+  background-size: 300% 100%;
+}
+html.theme-chalk[data-page-turn]::view-transition-group(page-leaf) {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0 30%,
+    rgb(255 255 255 / 0.12) 42%,
+    rgb(255 255 255 / 0.02) 49%,
+    rgb(0 0 0 / 0.3) 57%,
+    transparent 66% 100%
+  );
+}
+html[data-page-turn]::view-transition-old(page-leaf),
+html[data-page-turn]::view-transition-new(page-leaf) {
+  animation: none;
+  opacity: 0;
+}
+
+/* --------------------------------------------------------------- fade */
+
+html[data-page-turn='fade'] {
+  &::view-transition-old(root) {
+    animation: none;
+  }
+  &::view-transition-new(root) {
+    animation: page-fade-in 0.22s ease-out both;
+  }
+}
+
+/* ---------------------------------------------------- phones: shorter, flatter */
+
+@media (max-width: 720px) {
+  html[data-page-turn='forward']::view-transition-old(root) {
+    animation:
+      leaf-lift-flat $turn-phone $lift both,
+      leaf-light-out $turn-phone ease-in both;
+  }
+  html[data-page-turn='forward']::view-transition-new(root) {
+    animation-duration: $turn-phone;
+  }
+  html[data-page-turn='back']::view-transition-new(root) {
+    animation:
+      leaf-land-flat $turn-phone $land both,
+      leaf-light-in $turn-phone ease-out both;
+  }
+  html[data-page-turn='back']::view-transition-old(root) {
+    animation-duration: $turn-phone;
+  }
+  html[data-page-turn]::view-transition-group(page-leaf) {
+    animation: none;
+    background: none;
+  }
+}
+
+/* ---------------------------------------------------------- keyframes */
+
+/* Turning over the spine: the free edge comes up towards the viewer, the
+   page bows a little (skew) like paper does, then goes edge-on at the spine. */
+@keyframes leaf-lift {
+  0% {
+    transform: perspective(240vw) rotateY(0) skewY(0);
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
+  }
+  30% {
+    transform: perspective(240vw) rotateY(-24deg) skewY(-1.6deg);
+    box-shadow: 18px 0 50px 0 rgb(0 0 0 / 0.28);
+  }
+  70% {
+    transform: perspective(240vw) rotateY(-66deg) skewY(-0.8deg);
+    box-shadow: 30px 0 70px 0 rgb(0 0 0 / 0.3);
+  }
+  100% {
+    transform: perspective(240vw) rotateY(-90deg) skewY(0);
+    box-shadow: 40px 0 80px 0 rgb(0 0 0 / 0);
+  }
+}
+@keyframes leaf-land {
+  0% {
+    transform: perspective(240vw) rotateY(-90deg) skewY(0);
+    box-shadow: 40px 0 80px 0 rgb(0 0 0 / 0);
+  }
+  30% {
+    transform: perspective(240vw) rotateY(-66deg) skewY(-0.8deg);
+    box-shadow: 30px 0 70px 0 rgb(0 0 0 / 0.3);
+  }
+  70% {
+    transform: perspective(240vw) rotateY(-24deg) skewY(-1.6deg);
+    box-shadow: 18px 0 50px 0 rgb(0 0 0 / 0.28);
+  }
+  100% {
+    transform: perspective(240vw) rotateY(0) skewY(0);
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
+  }
+}
+@keyframes leaf-lift-flat {
+  from {
+    transform: perspective(300vw) rotateY(0);
+  }
+  to {
+    transform: perspective(300vw) rotateY(-90deg);
+  }
+}
+@keyframes leaf-land-flat {
+  from {
+    transform: perspective(300vw) rotateY(-90deg);
+  }
+  to {
+    transform: perspective(300vw) rotateY(0);
+  }
+}
+
+/* The leaf catches the light as it lifts, then dims as it turns away. */
+@keyframes leaf-light-out {
+  0% {
+    filter: brightness(1);
+  }
+  30% {
+    filter: brightness(1.04);
+  }
+  100% {
+    filter: brightness(0.72);
+  }
+}
+@keyframes leaf-light-in {
+  0% {
+    filter: brightness(0.72);
+  }
+  70% {
+    filter: brightness(1.04);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+/* A highlight + crease shadow travelling across the leaf. */
+@keyframes sheen-sweep {
+  0% {
+    background-position: 0% 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    background-position: 100% 0;
+    opacity: 1;
+  }
+}
+
+/* The page underneath sits in the turning leaf's shadow. */
+@keyframes under-page-clear {
+  from {
+    filter: brightness(0.8);
+  }
+  to {
+    filter: brightness(1);
+  }
+}
+@keyframes under-page-cover {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(0.8);
+  }
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+}

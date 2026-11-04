@@ -232,7 +232,19 @@ npx wrangler pages secret put ADMIN_KEY --project-name ink-pigment   # your admi
 openssl rand -hex 32 | npx wrangler pages secret put IP_SALT --project-name ink-pigment
 ```
 
-Then every deploy is one command:
+After that, **every push deploys itself** through GitHub Actions (`.github/workflows/deploy.yml`):
+
+- a push to `main` updates the live site, and applies any new files in `migrations/` first
+- a push to any other branch gets its own preview link
+
+The workflow needs two repository secrets, under **Settings → Secrets and variables → Actions**:
+
+| Secret | Where to get it |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token, with **Cloudflare Pages: Edit** and **D1: Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | `npx wrangler whoami`, or the right-hand side of the Cloudflare dashboard |
+
+You can still deploy by hand from your own machine:
 
 ```bash
 npm run deploy                            # builds and uploads the site + backend

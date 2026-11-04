@@ -237,12 +237,7 @@ After that, **every push deploys itself** through GitHub Actions (`.github/workf
 - a push to `main` updates the live site, and applies any new files in `migrations/` first
 - a push to any other branch gets its own preview link
 
-The workflow needs two repository secrets, under **Settings → Secrets and variables → Actions**:
-
-| Secret | Where to get it |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token, with **Cloudflare Pages: Edit** and **D1: Edit** |
-| `CLOUDFLARE_ACCOUNT_ID` | `npx wrangler whoami`, or the right-hand side of the Cloudflare dashboard |
+The workflow needs one repository secret, under **Settings → Secrets and variables → Actions**: `CLOUDFLARE_API_TOKEN`, made in Cloudflare → My Profile → API Tokens → Create Token, with **Cloudflare Pages: Edit** and **D1: Edit**. The Cloudflare account id is written in the workflow itself (it isn't private); if you fork this, put yours there (`npx wrangler whoami` shows it).
 
 You can still deploy by hand from your own machine:
 

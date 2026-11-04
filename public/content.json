@@ -5,16 +5,20 @@
   "tagline": "I build Angular interfaces for banks and fintech by day, and playful ones like this by night.",
   "location": "Gurugram, Haryana, India",
   "email": "priyaleedahiya@gmail.com",
-  "resumeUrl": "/Priyalee_Dahiya_Resume.pdf",
+  "resumeUrl": "",
   "about": [
     "I'm a frontend software engineer who loves building responsive, user-friendly web apps with clean, scalable code. At ScoreMe Solutions I build Angular screens for a digital lending platform used by banks: loan journeys for home, vehicle, education and government-scheme loans, GST renewal, maker/checker workflows and verification integrations like PAN, UPI and TAN.",
-    "I like working across the stack too. I built the GST Reporting engine in Python for our JSON rule-engine platform, and moved its FastAPI dashboard from server templates to Angular.",
-    "I studied computer applications, a BCA in Rohtak and then an MCA at Kurukshetra University, and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser. I'm always learning, and always up for teaming up on projects that make the web nicer to use."
+    "I like working across the stack too. I've built a GST reporting module in Python for our rule-engine platform, and moved its internal dashboard over to Angular.",
+    "I grew up in Rohtak, where I did my BCA, then finished an MCA at Kurukshetra University and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser. I'm always learning, and always up for teaming up on projects that make the web nicer to use."
   ],
   "facts": [
     {
       "label": "Based in",
       "value": "Gurugram, India"
+    },
+    {
+      "label": "Hometown",
+      "value": "Rohtak, Haryana"
     },
     {
       "label": "Focus",
@@ -130,15 +134,6 @@
       "slot": 0
     },
     {
-      "title": "GST Reporting engine",
-      "year": "2026",
-      "tagline": "Turns raw GST data into a finished report",
-      "description": "Built at ScoreMe for our JSON rule-engine platform: a Python engine that turns GST provider JSON into report output, following the business logic sheets. It handles versioned report layouts, CAGR, net profit, major parties, reverse charge and purchase totals, all backed by golden-file tests.",
-      "tech": ["Python", "FastAPI", "Angular", "pytest"],
-      "links": [],
-      "slot": 4
-    },
-    {
       "title": "Ng-Store",
       "year": "2025",
       "tagline": "A responsive Angular storefront",
@@ -180,13 +175,13 @@
       "role": "Frontend Software Engineer",
       "org": "ScoreMe Solutions Pvt. Ltd",
       "period": "Aug 2025 — Present",
-      "summary": "Angular screens for a digital lending platform used by banks, plus Python work on the RuleForge JSON rule engine.",
+      "summary": "Angular screens for a digital lending platform used by banks, plus Python work on an internal rule-engine platform.",
       "highlights": [
         "Built the GST renewal journey: loan type selection, editable loan amount, loan-offer integration and the GST OTP flow",
         "Built the maker/checker deviation workflow with role-based actions, consent checks and a recommendation trail",
         "Integrated PAN, EIN, Phone-to-UPI, Phone-to-Name and Company-to-TAN verification APIs",
-        "Hardened the frontend with payload encryption, data masking and a stricter password policy",
-        "Built the GST Reporting engine in Python and moved the rule-engine dashboard to Angular"
+        "Strengthened frontend security for sensitive financial data across loan journeys",
+        "Built a GST reporting module in Python and moved the rule-engine dashboard to Angular"
       ]
     },
     {

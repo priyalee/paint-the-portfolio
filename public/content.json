@@ -3,18 +3,18 @@
   "initials": "PD",
   "role": "Frontend Software Engineer",
   "tagline": "I build Angular interfaces for banks and fintech by day, and playful ones like this by night.",
-  "location": "Rohtak, Haryana, India",
+  "location": "Gurugram, Haryana, India",
   "email": "priyaleedahiya@gmail.com",
   "resumeUrl": "/Priyalee_Dahiya_Resume.pdf",
   "about": [
-    "I'm a frontend software engineer at ScoreMe Solutions, where I build Angular screens for a digital lending platform used by banks. My days are loan journeys for home, vehicle, education and government-scheme loans, GST renewal, maker/checker workflows and verification integrations like PAN, UPI and TAN.",
+    "I'm a frontend software engineer who loves building responsive, user-friendly web apps with clean, scalable code. At ScoreMe Solutions I build Angular screens for a digital lending platform used by banks: loan journeys for home, vehicle, education and government-scheme loans, GST renewal, maker/checker workflows and verification integrations like PAN, UPI and TAN.",
     "I like working across the stack too. I built the GST Reporting engine in Python for our JSON rule-engine platform, and moved its FastAPI dashboard from server templates to Angular.",
-    "I studied computer applications, a BCA in Rohtak and then an MCA at Kurukshetra University, and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser."
+    "I studied computer applications, a BCA in Rohtak and then an MCA at Kurukshetra University, and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser. I'm always learning, and always up for teaming up on projects that make the web nicer to use."
   ],
   "facts": [
     {
       "label": "Based in",
-      "value": "Rohtak, India"
+      "value": "Gurugram, India"
     },
     {
       "label": "Focus",
@@ -38,12 +38,20 @@
           "level": 85
         },
         {
+          "name": "JavaScript",
+          "level": 85
+        },
+        {
           "name": "RxJS",
           "level": 75
         },
         {
           "name": "Angular Material",
           "level": 75
+        },
+        {
+          "name": "React",
+          "level": 55
         },
         {
           "name": "HTML & CSS",
@@ -54,6 +62,10 @@
     {
       "name": "Backend & data",
       "items": [
+        {
+          "name": "REST APIs",
+          "level": 80
+        },
         {
           "name": "Python",
           "level": 70
@@ -108,13 +120,7 @@
       "year": "2026",
       "tagline": "A portfolio you paint, not just scroll",
       "description": "Every page starts as a line drawing and fills with the colours a visitor picks. It has a community mural, a splash wall and postcards, running on a serverless Cloudflare Pages Functions and D1 backend with rate limiting and an admin area.",
-      "tech": [
-        "Angular 21",
-        "TypeScript",
-        "Signals",
-        "Cloudflare Pages",
-        "D1"
-      ],
+      "tech": ["Angular 21", "TypeScript", "Signals", "Cloudflare Pages", "D1"],
       "links": [
         {
           "label": "Code",
@@ -128,12 +134,7 @@
       "year": "2026",
       "tagline": "Turns raw GST data into a finished report",
       "description": "Built at ScoreMe for our JSON rule-engine platform: a Python engine that turns GST provider JSON into report output, following the business logic sheets. It handles versioned report layouts, CAGR, net profit, major parties, reverse charge and purchase totals, all backed by golden-file tests.",
-      "tech": [
-        "Python",
-        "FastAPI",
-        "Angular",
-        "pytest"
-      ],
+      "tech": ["Python", "FastAPI", "Angular", "pytest"],
       "links": [],
       "slot": 4
     },
@@ -142,12 +143,7 @@
       "year": "2025",
       "tagline": "A responsive Angular storefront",
       "description": "A shopping site with a promotional front banner, category sections, product cards, routed pages and friendly loading and error states, organised into core, feature, layout and shared areas.",
-      "tech": [
-        "Angular",
-        "TypeScript",
-        "Bootstrap",
-        "Netlify"
-      ],
+      "tech": ["Angular", "TypeScript", "Bootstrap", "Netlify"],
       "links": [
         {
           "label": "Live",
@@ -165,12 +161,7 @@
       "year": "2026",
       "tagline": "Say “Nova” and it listens",
       "description": "A voice assistant that runs in the browser on the Web Speech API. It wakes on its name, opens sites, runs Google searches and answers aloud. I shipped five themed versions, from a notebook look to a glowing pink orb.",
-      "tech": [
-        "JavaScript",
-        "Web Speech API",
-        "HTML",
-        "CSS"
-      ],
+      "tech": ["JavaScript", "Web Speech API", "HTML", "CSS"],
       "links": [
         {
           "label": "Live",
@@ -203,9 +194,7 @@
       "org": "78Health Corporation",
       "period": "Jun 2024 — Aug 2024",
       "summary": "Built responsive, accessible user interfaces with a focus on performance.",
-      "highlights": [
-        "Worked closely with design and product teams"
-      ]
+      "highlights": ["Worked closely with design and product teams"]
     },
     {
       "role": "Master of Computer Applications (MCA)",
@@ -219,7 +208,7 @@
     {
       "role": "Bachelor of Computer Applications (BCA)",
       "org": "Government PG College for Women, Rohtak (MDU)",
-      "period": "2021 — 2023",
+      "period": "2020 — 2023",
       "summary": "Undergraduate study in computer applications.",
       "highlights": []
     }
@@ -232,8 +221,8 @@
     },
     {
       "label": "LinkedIn",
-      "url": "https://www.linkedin.com/in/priyalee-chander-24a7882b9",
-      "handle": "in/priyalee-chander-24a7882b9"
+      "url": "https://www.linkedin.com/in/priyalee-dahiya-24a7882b9",
+      "handle": "in/priyalee-dahiya-24a7882b9"
     }
   ]
 }

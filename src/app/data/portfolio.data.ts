@@ -66,18 +66,18 @@ export const PORTFOLIO: Portfolio = {
   role: 'Frontend Software Engineer',
   tagline:
     'I build Angular interfaces for banks and fintech by day, and playful ones like this by night.',
-  location: 'Rohtak, Haryana, India',
+  location: 'Gurugram, Haryana, India',
   email: 'priyaleedahiya@gmail.com',
   resumeUrl: '/Priyalee_Dahiya_Resume.pdf',
   about: [
-    "I'm a frontend software engineer at ScoreMe Solutions, where I build Angular screens for a digital lending platform used by banks. My days are loan journeys for home, vehicle, education and government-scheme loans, GST renewal, maker/checker workflows and verification integrations like PAN, UPI and TAN.",
+    "I'm a frontend software engineer who loves building responsive, user-friendly web apps with clean, scalable code. At ScoreMe Solutions I build Angular screens for a digital lending platform used by banks: loan journeys for home, vehicle, education and government-scheme loans, GST renewal, maker/checker workflows and verification integrations like PAN, UPI and TAN.",
     'I like working across the stack too. I built the GST Reporting engine in Python for our JSON rule-engine platform, and moved its FastAPI dashboard from server templates to Angular.',
-    'I studied computer applications, a BCA in Rohtak and then an MCA at Kurukshetra University, and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser.',
+    "I studied computer applications, a BCA in Rohtak and then an MCA at Kurukshetra University, and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser. I'm always learning, and always up for teaming up on projects that make the web nicer to use.",
   ],
   facts: [
     {
       label: 'Based in',
-      value: 'Rohtak, India',
+      value: 'Gurugram, India',
     },
     {
       label: 'Focus',
@@ -101,12 +101,20 @@ export const PORTFOLIO: Portfolio = {
           level: 85,
         },
         {
+          name: 'JavaScript',
+          level: 85,
+        },
+        {
           name: 'RxJS',
           level: 75,
         },
         {
           name: 'Angular Material',
           level: 75,
+        },
+        {
+          name: 'React',
+          level: 55,
         },
         {
           name: 'HTML & CSS',
@@ -117,6 +125,10 @@ export const PORTFOLIO: Portfolio = {
     {
       name: 'Backend & data',
       items: [
+        {
+          name: 'REST APIs',
+          level: 80,
+        },
         {
           name: 'Python',
           level: 70,
@@ -264,7 +276,7 @@ export const PORTFOLIO: Portfolio = {
     {
       role: 'Bachelor of Computer Applications (BCA)',
       org: 'Government PG College for Women, Rohtak (MDU)',
-      period: '2021 — 2023',
+      period: '2020 — 2023',
       summary: 'Undergraduate study in computer applications.',
       highlights: [],
     },
@@ -277,8 +289,8 @@ export const PORTFOLIO: Portfolio = {
     },
     {
       label: 'LinkedIn',
-      url: 'https://www.linkedin.com/in/priyalee-chander-24a7882b9',
-      handle: 'in/priyalee-chander-24a7882b9',
+      url: 'https://www.linkedin.com/in/priyalee-dahiya-24a7882b9',
+      handle: 'in/priyalee-dahiya-24a7882b9',
     },
   ],
 };

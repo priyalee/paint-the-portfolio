@@ -43,7 +43,9 @@ export interface Signature {
       <button type="button" class="btn" (click)="submit()" [disabled]="saving()">
         <app-icon name="brush" /> {{ saving() ? 'Drying…' : submitLabel() }}
       </button>
-      <button type="button" class="btn btn-ghost" (click)="cancel.emit()">{{ cancelLabel() }}</button>
+      <button type="button" class="btn btn-ghost" (click)="cancel.emit()">
+        {{ cancelLabel() }}
+      </button>
     </div>
   `,
   styles: `
@@ -112,7 +114,7 @@ export interface Signature {
 export class SignForm implements OnInit {
   readonly heading = input.required<string>();
   readonly color = input.required<string>();
-  readonly hint = input('Change the colour in the dock if you like, then sign it.');
+  readonly hint = input('Pick another wall colour if you like, then sign it.');
   readonly submitLabel = input('Sign it');
   readonly cancelLabel = input('Cancel');
   readonly saving = input(false);

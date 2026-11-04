@@ -18,7 +18,9 @@ export interface Artist {
       <h4>Recent painters</h4>
       <ul>
         @for (m of recent(); track m.id) {
-          <li [title]="m.place || ''"><span class="dot" [style.background]="m.color"></span>{{ m.name }}</li>
+          <li [title]="m.place || ''">
+            <span class="dot" [style.background]="m.color"></span>{{ m.name }}
+          </li>
         }
       </ul>
     }

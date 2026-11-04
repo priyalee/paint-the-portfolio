@@ -61,119 +61,224 @@ export interface Portfolio {
 }
 
 export const PORTFOLIO: Portfolio = {
-  name: 'Your Name',
-  initials: 'YN',
-  role: 'Frontend Developer & Designer',
-  tagline: 'I build interfaces that feel hand-made — sketched in ink, finished in colour.',
-  location: 'City, Country',
-  email: 'hello@example.com',
-  resumeUrl: '',
+  name: 'Priyalee Dahiya',
+  initials: 'PD',
+  role: 'Frontend Software Engineer',
+  tagline:
+    'I build Angular interfaces for banks and fintech by day, and playful ones like this by night.',
+  location: 'Rohtak, Haryana, India',
+  email: 'priyaleedahiya@gmail.com',
+  resumeUrl: '/Priyalee_Dahiya_Resume.pdf',
   about: [
-    'This is where your story goes: a short paragraph about who you are, what you love building and the kind of problems you enjoy solving.',
-    'A second paragraph can cover your background, what you are learning right now, or what you do when you are away from the keyboard.',
+    "I'm a frontend software engineer at ScoreMe Solutions, where I build Angular screens for a digital lending platform used by banks. My days are loan journeys for home, vehicle, education and government-scheme loans, GST renewal, maker/checker workflows and verification integrations like PAN, UPI and TAN.",
+    'I like working across the stack too. I built the GST Reporting engine in Python for our JSON rule-engine platform, and moved its FastAPI dashboard from server templates to Angular.',
+    'I studied computer applications, a BCA in Rohtak and then an MCA at Kurukshetra University, and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser.',
   ],
   facts: [
-    { label: 'Based in', value: 'City, Country' },
-    { label: 'Focus', value: 'Angular · UI engineering' },
-    { label: 'Currently', value: 'Open to new projects' },
+    {
+      label: 'Based in',
+      value: 'Rohtak, India',
+    },
+    {
+      label: 'Focus',
+      value: 'Angular · TypeScript · RxJS',
+    },
+    {
+      label: 'Currently',
+      value: 'Frontend engineer at ScoreMe',
+    },
   ],
   skills: [
     {
       name: 'Frontend',
       items: [
-        { name: 'Angular', level: 90 },
-        { name: 'TypeScript', level: 85 },
-        { name: 'HTML & CSS', level: 92 },
-        { name: 'RxJS', level: 70 },
+        {
+          name: 'Angular',
+          level: 90,
+        },
+        {
+          name: 'TypeScript',
+          level: 85,
+        },
+        {
+          name: 'RxJS',
+          level: 75,
+        },
+        {
+          name: 'Angular Material',
+          level: 75,
+        },
+        {
+          name: 'HTML & CSS',
+          level: 90,
+        },
       ],
     },
     {
-      name: 'Design',
+      name: 'Backend & data',
       items: [
-        { name: 'Figma', level: 75 },
-        { name: 'SVG & Motion', level: 68 },
-        { name: 'Accessibility', level: 72 },
+        {
+          name: 'Python',
+          level: 70,
+        },
+        {
+          name: 'FastAPI',
+          level: 65,
+        },
+        {
+          name: 'Node.js',
+          level: 60,
+        },
+        {
+          name: 'MySQL',
+          level: 60,
+        },
+        {
+          name: 'MongoDB',
+          level: 55,
+        },
       ],
     },
     {
       name: 'Tooling',
       items: [
-        { name: 'Git', level: 80 },
-        { name: 'Node.js', level: 60 },
-        { name: 'Testing', level: 65 },
+        {
+          name: 'Git & GitHub',
+          level: 85,
+        },
+        {
+          name: 'Jira',
+          level: 80,
+        },
+        {
+          name: 'Figma',
+          level: 70,
+        },
+        {
+          name: 'Cloudflare',
+          level: 60,
+        },
+        {
+          name: 'Testing',
+          level: 65,
+        },
       ],
     },
   ],
   projects: [
     {
-      title: 'Project One',
+      title: 'Ink & Pigment',
       year: '2026',
-      tagline: 'One-line pitch of the project',
+      tagline: 'A portfolio you paint, not just scroll',
       description:
-        'Two or three sentences on the problem, what you built and the result. Mention the part you are proudest of.',
-      tech: ['Angular', 'TypeScript', 'SCSS'],
+        'Every page starts as a line drawing and fills with the colours a visitor picks. It has a community mural, a splash wall and postcards, running on a serverless Cloudflare Pages Functions and D1 backend with rate limiting and an admin area.',
+      tech: ['Angular 21', 'TypeScript', 'Signals', 'Cloudflare Pages', 'D1'],
       links: [
-        { label: 'Live', url: 'https://example.com' },
-        { label: 'Code', url: 'https://github.com' },
+        {
+          label: 'Code',
+          url: 'https://github.com/priyalee/paint-the-portfolio',
+        },
       ],
       slot: 0,
     },
     {
-      title: 'Project Two',
-      year: '2025',
-      tagline: 'One-line pitch of the project',
+      title: 'GST Reporting engine',
+      year: '2026',
+      tagline: 'Turns raw GST data into a finished report',
       description:
-        'Two or three sentences on the problem, what you built and the result. Mention the part you are proudest of.',
-      tech: ['Angular', 'Signals', 'Firebase'],
-      links: [{ label: 'Code', url: 'https://github.com' }],
+        'Built at ScoreMe for our JSON rule-engine platform: a Python engine that turns GST provider JSON into report output, following the business logic sheets. It handles versioned report layouts, CAGR, net profit, major parties, reverse charge and purchase totals, all backed by golden-file tests.',
+      tech: ['Python', 'FastAPI', 'Angular', 'pytest'],
+      links: [],
+      slot: 4,
+    },
+    {
+      title: 'Ng-Store',
+      year: '2025',
+      tagline: 'A responsive Angular storefront',
+      description:
+        'A shopping site with a promotional front banner, category sections, product cards, routed pages and friendly loading and error states, organised into core, feature, layout and shared areas.',
+      tech: ['Angular', 'TypeScript', 'Bootstrap', 'Netlify'],
+      links: [
+        {
+          label: 'Live',
+          url: 'https://my-ng-store.netlify.app/',
+        },
+        {
+          label: 'Code',
+          url: 'https://github.com/priyalee/ngstore',
+        },
+      ],
       slot: 3,
     },
     {
-      title: 'Project Three',
-      year: '2025',
-      tagline: 'One-line pitch of the project',
+      title: 'NOVA',
+      year: '2026',
+      tagline: 'Say “Nova” and it listens',
       description:
-        'Two or three sentences on the problem, what you built and the result. Mention the part you are proudest of.',
-      tech: ['TypeScript', 'Canvas', 'Node.js'],
-      links: [{ label: 'Live', url: 'https://example.com' }],
+        'A voice assistant that runs in the browser on the Web Speech API. It wakes on its name, opens sites, runs Google searches and answers aloud. I shipped five themed versions, from a notebook look to a glowing pink orb.',
+      tech: ['JavaScript', 'Web Speech API', 'HTML', 'CSS'],
+      links: [
+        {
+          label: 'Live',
+          url: 'https://original-va.netlify.app/',
+        },
+        {
+          label: 'Code',
+          url: 'https://github.com/priyalee/nova-voice-assistant',
+        },
+      ],
       slot: 1,
-    },
-    {
-      title: 'Project Four',
-      year: '2024',
-      tagline: 'One-line pitch of the project',
-      description:
-        'Two or three sentences on the problem, what you built and the result. Mention the part you are proudest of.',
-      tech: ['Figma', 'Design system'],
-      links: [],
-      slot: 4,
     },
   ],
   experience: [
     {
-      role: 'Job Title',
-      org: 'Company Name',
-      period: '2025 — Present',
-      summary: 'One sentence about the team and what you own there.',
-      highlights: ['A measurable achievement', 'Something you shipped'],
+      role: 'Frontend Software Engineer',
+      org: 'ScoreMe Solutions Pvt. Ltd',
+      period: 'Aug 2025 — Present',
+      summary:
+        'Angular screens for a digital lending platform used by banks, plus Python work on the RuleForge JSON rule engine.',
+      highlights: [
+        'Built the GST renewal journey: loan type selection, editable loan amount, loan-offer integration and the GST OTP flow',
+        'Built the maker/checker deviation workflow with role-based actions, consent checks and a recommendation trail',
+        'Integrated PAN, EIN, Phone-to-UPI, Phone-to-Name and Company-to-TAN verification APIs',
+        'Hardened the frontend with payload encryption, data masking and a stricter password policy',
+        'Built the GST Reporting engine in Python and moved the rule-engine dashboard to Angular',
+      ],
     },
     {
-      role: 'Job Title',
-      org: 'Company Name',
+      role: 'Frontend Developer Intern',
+      org: '78Health Corporation',
+      period: 'Jun 2024 — Aug 2024',
+      summary: 'Built responsive, accessible user interfaces with a focus on performance.',
+      highlights: ['Worked closely with design and product teams'],
+    },
+    {
+      role: 'Master of Computer Applications (MCA)',
+      org: 'Kurukshetra University',
       period: '2023 — 2025',
-      summary: 'One sentence about the team and what you own there.',
-      highlights: ['A measurable achievement', 'Something you shipped'],
+      summary: 'Postgraduate study in computer applications.',
+      highlights: [
+        'Presented “Green Cloud Computing: The Best Strategy for a Sustainable Tomorrow” at NCFCTSD-24, MDU Rohtak',
+      ],
     },
     {
-      role: 'Degree / Course',
-      org: 'University or School',
-      period: '2019 — 2023',
-      summary: 'What you studied and anything notable.',
-      highlights: ['Award, project or club'],
+      role: 'Bachelor of Computer Applications (BCA)',
+      org: 'Government PG College for Women, Rohtak (MDU)',
+      period: '2021 — 2023',
+      summary: 'Undergraduate study in computer applications.',
+      highlights: [],
     },
   ],
   socials: [
-    { label: 'GitHub', url: 'https://github.com/', handle: '@username' },
-    { label: 'LinkedIn', url: 'https://linkedin.com/', handle: 'in/username' },
+    {
+      label: 'GitHub',
+      url: 'https://github.com/priyalee',
+      handle: '@priyalee',
+    },
+    {
+      label: 'LinkedIn',
+      url: 'https://www.linkedin.com/in/priyalee-chander-24a7882b9',
+      handle: 'in/priyalee-chander-24a7882b9',
+    },
   ],
 };

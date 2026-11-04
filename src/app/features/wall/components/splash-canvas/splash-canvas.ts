@@ -30,7 +30,7 @@ interface Tip {
 let uid = 0;
 
 /**
- * A brick wall visitors throw paint at. Signed splashes show their painter on
+ * A plain wall visitors throw paint at. Signed splashes show their painter on
  * hover; clicking an open spot throws a new (pending) splash there.
  */
 @Component({
@@ -49,27 +49,23 @@ let uid = 0;
         (pointerdown)="onMove($event)"
       >
         <defs>
-          <pattern [attr.id]="brickId" width="120" height="60" patternUnits="userSpaceOnUse">
-            <path class="mortar" d="M0 1H120M0 30H120M1 0V30M61 0V30M31 30V60M91 30V60" />
-          </pattern>
+          <!-- Slightly uneven edges, so the paint looks thrown rather than stamped. -->
+          <filter color-interpolation-filters="sRGB" [attr.id]="roughId" x="-30%" y="-30%" width="160%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="9" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              scale="3"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
         </defs>
-        <rect class="paper" [attr.width]="wall.width" [attr.height]="wall.height" />
-        <rect [attr.width]="wall.width" [attr.height]="wall.height" [attr.fill]="'url(#' + brickId + ')'" />
+        <rect class="wall" [attr.width]="wall.width" [attr.height]="wall.height" />
 
-        @for (s of shapes(); track s.id) {
-          <g [attr.transform]="'translate(' + s.x + ' ' + s.y + ')'" [attr.data-sid]="s.id">
-            <g class="ink" [style.fill]="s.color">
+        @for (s of drawn(); track s.id) {
+          <g [attr.transform]="'translate(' + s.x + ' ' + s.y + ')'" [attr.data-sid]="s.sid">
+            <g class="splat" [style.fill]="s.color" [attr.filter]="'url(#' + roughId + ')'">
               @for (d of s.paths; track $index) {
-                <path [attr.d]="d" />
-              }
-            </g>
-          </g>
-        }
-
-        @if (pendingShape(); as p) {
-          <g [attr.transform]="'translate(' + p.x + ' ' + p.y + ')'">
-            <g class="ink pending" [style.fill]="pendingColor()">
-              @for (d of p.paths; track $index) {
                 <path [attr.d]="d" />
               }
             </g>
@@ -104,22 +100,13 @@ let uid = 0;
     svg.locked {
       cursor: default;
     }
-    .paper {
+    .wall {
       fill: var(--paper);
     }
-    .mortar {
-      fill: none;
-      stroke: var(--line);
-      stroke-width: 2;
-    }
-    .ink {
-      stroke: none;
+    .splat {
       transform-box: fill-box;
       transform-origin: center;
       animation: splat 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
-    }
-    .pending {
-      opacity: 0.85;
     }
     @keyframes splat {
       from {
@@ -131,7 +118,7 @@ let uid = 0;
       }
     }
     @media (prefers-reduced-motion: reduce) {
-      .ink {
+      .splat {
         animation: none;
       }
     }
@@ -166,7 +153,7 @@ export class SplashCanvas {
 
   protected readonly wall = SPLASH_WALL;
   protected readonly viewBox = `0 0 ${SPLASH_WALL.width} ${SPLASH_WALL.height}`;
-  protected readonly brickId = `bricks-${++uid}`;
+  protected readonly roughId = `paint-rough-${++uid}`;
   protected readonly tip = signal<Tip | null>(null);
   private tipTimer?: ReturnType<typeof setTimeout>;
 
@@ -176,6 +163,19 @@ export class SplashCanvas {
   protected readonly pendingShape = computed(() => {
     const p = this.pending();
     return p ? { ...p, paths: splatPaths(p.seed, p.size) } : null;
+  });
+  /** Signed splashes plus the pending one (drawn last, on top), ready to render. */
+  protected readonly drawn = computed(() => {
+    const list = this.shapes().map((s) => ({ ...s, sid: s.id as string | null }));
+    const p = this.pendingShape();
+    if (p)
+      list.push({
+        ...p,
+        id: 'pending',
+        sid: null,
+        color: this.pendingColor(),
+      } as (typeof list)[number]);
+    return list;
   });
   private readonly byId = computed(() => new Map(this.splashes().map((s) => [s.id, s])));
 

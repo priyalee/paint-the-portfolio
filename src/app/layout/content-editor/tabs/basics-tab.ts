@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EditorSession } from '../editor-session';
 
-/** Editor tab: Name, role, tagline, location, email, résumé. */
+/** Editor tab: Name, role, tagline, location, email, resume. */
 @Component({
   selector: 'app-basics-tab',
   imports: [FormsModule],
@@ -39,7 +39,7 @@ import { EditorSession } from '../editor-session';
       </label>
     </div>
     <label class="field">
-      <span>Résumé link (PDF URL, optional)</span>
+      <span>Resume link (PDF URL, optional)</span>
       <input type="url" [(ngModel)]="w.resumeUrl" (ngModelChange)="session.changed()" placeholder="https://…" />
     </label>
   `,

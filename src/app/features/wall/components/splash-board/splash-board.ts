@@ -8,44 +8,45 @@ import {
   viewChild,
 } from '@angular/core';
 import { Celebration } from '@core/celebration';
-import { PaintState } from '@core/paint-state';
+import { WallColour } from '@core/wall-colours';
 import { SPLASH_BACKEND, SPLASH_SIZE, SPLASH_WALL, Splash } from '@core/splash-store';
 import { Reveal } from '@shared/directives/reveal.directive';
 import { PostcardSource } from '@shared/directives/postcard-source.directive';
 import { Icon } from '@shared/ui/icon';
 import { RecentArtists } from '../recent-artists/recent-artists';
 import { SignForm, Signature } from '../sign-form/sign-form';
+import { WallPalette } from '../wall-palette/wall-palette';
 import { PendingSplash, SplashCanvas } from '../splash-canvas/splash-canvas';
 import { readFlag, writeFlag } from '../signed-flag';
 
 const SIGNED_KEY = 'ink-pigment:splash-signed';
 /** Keeps splashes (and their droplets) mostly on the wall. */
-const MARGIN = 80;
+const MARGIN = 45;
 
 /**
- * Splash wall: each visitor throws one splash of paint anywhere on a brick
+ * Splash wall: each visitor throws one splash of paint anywhere on a plain
  * wall and signs it. Splashes overlap freely, so the wall gets messier (and
  * better) the more people visit.
  */
 @Component({
   selector: 'app-splash-board',
-  imports: [SplashCanvas, RecentArtists, SignForm, Reveal, Icon, PostcardSource],
+  imports: [SplashCanvas, RecentArtists, SignForm, Reveal, Icon, PostcardSource, WallPalette],
   templateUrl: './splash-board.html',
   styleUrl: '../board.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SplashBoard {
-  protected readonly state = inject(PaintState);
+  protected readonly paint = inject(WallColour);
   private readonly backend = inject(SPLASH_BACKEND);
   private readonly celebration = inject(Celebration);
 
   protected readonly splashes = signal<Splash[]>([]);
-  /** Visitor is changing their own splash (colour previews live from the dock). */
+  /** Visitor is changing their own splash (colour previews live from the wall colours). */
   protected readonly editing = signal(false);
   /** What the wall shows: the visitor's splash recoloured live while editing. */
   protected readonly shown = computed(() => {
     const id = this.signedId();
-    const colour = this.state.activeColor().hex;
+    const colour = this.paint.colour().hex;
     return this.editing()
       ? this.splashes().map((s) => (s.id === id ? { ...s, color: colour } : s))
       : this.splashes();
@@ -78,7 +79,10 @@ export class SplashBoard {
       x: Math.round(clamp(point.x, MARGIN, SPLASH_WALL.width - MARGIN)),
       y: Math.round(clamp(point.y, MARGIN, SPLASH_WALL.height - MARGIN)),
       seed: Math.floor(Math.random() * 2 ** 31),
-      size: Math.round(SPLASH_SIZE.min + Math.random() * (SPLASH_SIZE.max - SPLASH_SIZE.min)),
+      // Mostly small splashes, with the occasional big one.
+      size: Math.round(
+        SPLASH_SIZE.min + Math.random() ** 1.7 * (SPLASH_SIZE.max - SPLASH_SIZE.min),
+      ),
     });
   }
 
@@ -95,7 +99,7 @@ export class SplashBoard {
     if (!p || this.saving() || this.signedId()) return;
     this.saving.set(true);
     this.error.set('');
-    const colour = this.state.activeColor();
+    const colour = this.paint.colour();
     const splash: Splash = {
       id: crypto.randomUUID?.() ?? String(Date.now()),
       ...p,
@@ -132,7 +136,7 @@ export class SplashBoard {
     try {
       const result = await this.backend.update({
         ...mine,
-        color: this.state.activeColor().hex,
+        color: this.paint.colour().hex,
         name: sig.name,
         place: sig.place,
       });

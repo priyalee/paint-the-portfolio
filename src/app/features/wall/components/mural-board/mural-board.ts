@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { Celebration } from '@core/celebration';
 import { MURAL_BACKEND, MuralClaim } from '@core/mural-store';
-import { PaintState } from '@core/paint-state';
+import { WallColour } from '@core/wall-colours';
 import { ArtShape } from '@shared/art/art';
 import { MURAL } from '@shared/art/mural';
 import { Reveal } from '@shared/directives/reveal.directive';
@@ -18,6 +18,7 @@ import { Icon } from '@shared/ui/icon';
 import { MuralCanvas } from '../mural-canvas/mural-canvas';
 import { RecentArtists } from '../recent-artists/recent-artists';
 import { SignForm, Signature } from '../sign-form/sign-form';
+import { WallPalette } from '../wall-palette/wall-palette';
 import { readFlag, writeFlag } from '../signed-flag';
 
 const SIGNED_KEY = 'ink-pigment:mural-signed';
@@ -28,13 +29,13 @@ const SIGNED_KEY = 'ink-pigment:mural-signed';
  */
 @Component({
   selector: 'app-mural-board',
-  imports: [MuralCanvas, RecentArtists, SignForm, Reveal, Icon, PostcardSource],
+  imports: [MuralCanvas, RecentArtists, SignForm, Reveal, Icon, PostcardSource, WallPalette],
   templateUrl: './mural-board.html',
   styleUrl: '../board.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MuralBoard {
-  protected readonly state = inject(PaintState);
+  protected readonly paint = inject(WallColour);
   private readonly backend = inject(MURAL_BACKEND);
   private readonly celebration = inject(Celebration);
 
@@ -46,7 +47,7 @@ export class MuralBoard {
   protected readonly saving = signal(false);
   protected readonly error = signal('');
   protected readonly signedRegion = signal<string | null>(readFlag(SIGNED_KEY));
-  /** Visitor is changing their own shape (colour previews live from the dock). */
+  /** Visitor is changing their own shape (colour previews live from the wall colours). */
   protected readonly editing = signal(false);
 
   /** regionId → claim, with the visitor's shape recoloured live while editing. */
@@ -54,7 +55,7 @@ export class MuralBoard {
     const map = new Map(this.claims().map((c) => [c.regionId, c]));
     const id = this.signedRegion();
     const mine = id ? map.get(id) : undefined;
-    if (this.editing() && mine) map.set(mine.regionId, { ...mine, color: this.state.activeColor().hex });
+    if (this.editing() && mine) map.set(mine.regionId, { ...mine, color: this.paint.colour().hex });
     return map;
   });
 
@@ -90,7 +91,7 @@ export class MuralBoard {
     if (!shape || this.saving() || this.signedRegion()) return;
     this.saving.set(true);
     this.error.set('');
-    const colour = this.state.activeColor();
+    const colour = this.paint.colour();
     const claim: MuralClaim = {
       id: crypto.randomUUID?.() ?? String(Date.now()),
       regionId: shape.id,
@@ -128,7 +129,7 @@ export class MuralBoard {
     try {
       const result = await this.backend.update({
         ...mine,
-        color: this.state.activeColor().hex,
+        color: this.paint.colour().hex,
         name: sig.name,
         place: sig.place,
       });

@@ -28,7 +28,13 @@ interface Tip {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="frame" (pointerleave)="onLeave($event)">
-      <svg #svg class="art" [attr.viewBox]="art().viewBox" role="group" [attr.aria-label]="art().title + ' community mural'">
+      <svg
+        #svg
+        class="art"
+        [attr.viewBox]="art().viewBox"
+        role="group"
+        [attr.aria-label]="art().title + ' community mural'"
+      >
         @for (s of art().shapes; track s.id) {
           @let claim = claims().get(s.id);
           <path
@@ -73,7 +79,9 @@ interface Tip {
       overflow: hidden;
     }
     path {
-      transition: fill 0.4s var(--ease), opacity 0.2s;
+      transition:
+        fill 0.4s var(--ease),
+        opacity 0.2s;
       outline: none;
     }
     path.free {
@@ -131,7 +139,8 @@ export class MuralCanvas {
   }
 
   protected ariaFor(s: ArtShape, claim: MuralClaim | undefined): string {
-    if (claim) return `${s.label}, painted by ${claim.name}${claim.place ? ' from ' + claim.place : ''}`;
+    if (claim)
+      return `${s.label}, painted by ${claim.name}${claim.place ? ' from ' + claim.place : ''}`;
     return `${s.label}, not painted yet`;
   }
 

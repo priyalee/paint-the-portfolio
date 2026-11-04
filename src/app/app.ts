@@ -11,7 +11,6 @@ import { Navbar } from '@layout/navbar/navbar';
 import { PageNav } from '@layout/page-nav/page-nav';
 import { PostcardDialog } from '@layout/postcard-dialog/postcard-dialog';
 import { PaintDock } from '@layout/paint-dock/paint-dock';
-import { SketchSpine } from '@layout/sketch-spine/sketch-spine';
 import { PaintBlock } from '@shared/paint/paint-block.directive';
 
 @Component({
@@ -26,7 +25,6 @@ import { PaintBlock } from '@shared/paint/paint-block.directive';
     PageNav,
     PostcardDialog,
     PaintBlock,
-    SketchSpine,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

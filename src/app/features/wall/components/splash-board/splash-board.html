@@ -2,10 +2,11 @@
   <app-splash-canvas
     [splashes]="shown()"
     [pending]="pending()"
-    [pendingColor]="state.activeColor().hex"
+    [pendingColor]="paint.colour().hex"
     [locked]="!!signedId()"
     (drop)="throwAt($event)"
   />
+  <app-wall-palette />
   <div class="meter-row">
     <span class="count">
       {{ splashes().length }} {{ splashes().length === 1 ? 'splash' : 'splashes' }} on the wall
@@ -17,9 +18,9 @@
   <div class="card panel">
     @if (editing() && mine(); as m) {
       <app-sign-form
-        [heading]="'A ' + state.activeColor().name + ' splash'"
-        [color]="state.activeColor().hex"
-        hint="Pick a new colour in the dock to repaint your splash, or fix your name."
+        [heading]="'A ' + paint.colour().name + ' splash'"
+        [color]="paint.colour().hex"
+        hint="Pick a new wall colour to repaint your splash, or fix your name."
         submitLabel="Save changes"
         cancelLabel="Cancel"
         [initial]="m"
@@ -42,9 +43,9 @@
       }
     } @else if (pending()) {
       <app-sign-form
-        [heading]="'A ' + state.activeColor().name + ' splash'"
-        [color]="state.activeColor().hex"
-        hint="Not quite right? Click the wall again to throw it somewhere else, or change the colour in the dock."
+        [heading]="'A ' + paint.colour().name + ' splash'"
+        [color]="paint.colour().hex"
+        hint="Not quite right? Click the wall again to throw it somewhere else, or pick another wall colour."
         submitLabel="Sign my splash"
         cancelLabel="Wipe it off"
         [saving]="saving()"
@@ -54,7 +55,7 @@
     } @else {
       <h3>How it works</h3>
       <ol class="steps">
-        <li><span>1</span> Choose a colour in the paint dock below.</li>
+        <li><span>1</span> Choose a colour under the wall.</li>
         <li><span>2</span> Click anywhere on the wall to throw your paint.</li>
         <li><span>3</span> Add your name and sign it — one splash per visitor.</li>
       </ol>

@@ -10,7 +10,8 @@ export const MAX_FROM = 24;
 
 /** Size of the splash wall in SVG units. Splashes store positions in these units. */
 export const SPLASH_WALL = { width: 1000, height: 560 } as const;
-export const SPLASH_SIZE = { min: 42, max: 74 } as const;
+/** Splash radius in wall units: small, so the wall has room for lots of visitors. */
+export const SPLASH_SIZE = { min: 12, max: 36 } as const;
 
 export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 /** Ids are made in the browser (crypto.randomUUID) so the visitor can remember them. */

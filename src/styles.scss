@@ -4,8 +4,6 @@
    <html> by PaintState; the values below are only first-paint fallbacks.
    ========================================================================== */
 
-@use './styles/page-turn';
-
 :root {
   --paper: #f6f2e9;
   --paper-2: #ece6d8;
@@ -350,7 +348,6 @@ html.tool-roller body {
 }
 
 /* ------------------------------------------- mono / colour sweep (View Transitions) */
-/* PaintState.sweep reveals the new root with a growing circle (clip-path). */
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -361,7 +358,26 @@ html.tool-roller body {
   z-index: 2;
 }
 
-/* Route changes turn like sketchbook pages: see styles/_page-turn.scss */
+/* Route changes: the new page rolls in like a fresh coat of paint */
+html.page-transition::view-transition-new(root) {
+  animation: paint-roll 0.7s cubic-bezier(0.7, 0, 0.25, 1) both;
+}
+html.page-transition::view-transition-old(root) {
+  animation: page-dim 0.7s ease both;
+}
+@keyframes paint-roll {
+  from {
+    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 130% 0, 100% 100%, 0 100%);
+  }
+}
+@keyframes page-dim {
+  to {
+    opacity: 0.6;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html {

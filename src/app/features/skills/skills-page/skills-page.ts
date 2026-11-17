@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ContentStore } from '@core/content-store';
+import { siteKeys } from '@core/paint-keys';
 import { Reveal } from '@shared/directives/reveal.directive';
 import { PostcardSource } from '@shared/directives/postcard-source.directive';
 import { SectionHeader } from '@shared/ui/section-header';
@@ -20,7 +21,13 @@ import { SkillShelf } from '../components/skill-shelf/skill-shelf';
         />
         <div class="shelves" appPostcardSource="skills">
           @for (group of data().skills; track $index; let g = $index) {
-            <app-skill-shelf [group]="group" [index]="g" appReveal />
+            <app-skill-shelf
+              [group]="group"
+              [groupKey]="keys().skills[g].key"
+              [skillKeys]="keys().skills[g].items"
+              [index]="g"
+              appReveal
+            />
           }
         </div>
       </div>
@@ -35,4 +42,6 @@ import { SkillShelf } from '../components/skill-shelf/skill-shelf';
 })
 export class SkillsPage {
   protected readonly data = inject(ContentStore).content;
+  /** Stable paint keys, so paint stays on the same jar if skills are reordered. */
+  protected readonly keys = computed(() => siteKeys(this.data()));
 }

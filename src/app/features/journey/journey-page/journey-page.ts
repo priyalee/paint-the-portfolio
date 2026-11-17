@@ -3,11 +3,13 @@ import {
   Component,
   ElementRef,
   afterNextRender,
+  computed,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
 import { ContentStore } from '@core/content-store';
+import { journeyRegionId, siteKeys } from '@core/paint-keys';
 import { reducedMotion } from '@core/paint-state';
 import { Reveal } from '@shared/directives/reveal.directive';
 import { PaintBlock } from '@shared/paint/paint-block.directive';
@@ -36,7 +38,7 @@ import { TimelineEntry } from '../components/timeline-entry/timeline-entry';
         <div class="timeline" #timeline appPaintBlock="journey-" blockTitle="Journey markers">
           <app-brush-spine [progress]="progress()" />
           @for (item of data().experience; track $index; let i = $index) {
-            <app-timeline-entry [item]="item" [index]="i" appReveal />
+            <app-timeline-entry [item]="item" [index]="i" [regionId]="regionOf(keys()[i])" appReveal />
           }
         </div>
       </div>
@@ -53,6 +55,9 @@ import { TimelineEntry } from '../components/timeline-entry/timeline-entry';
 })
 export class JourneyPage {
   protected readonly data = inject(ContentStore).content;
+  /** Stable paint keys, so a marker's paint stays with its entry if entries are reordered. */
+  protected readonly keys = computed(() => siteKeys(this.data()).journey);
+  protected readonly regionOf = journeyRegionId;
   protected readonly progress = signal(0);
   private readonly timeline = viewChild.required<ElementRef<HTMLElement>>('timeline');
 

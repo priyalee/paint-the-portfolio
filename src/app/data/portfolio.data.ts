@@ -10,17 +10,21 @@
  */
 
 export interface SkillItem {
+  /** Stable paint key (core/paint-keys); filled in automatically when missing. */
+  key?: string;
   name: string;
   /** 0-100 — how full the paint jar is. */
   level: number;
 }
 
 export interface SkillGroup {
+  key?: string;
   name: string;
   items: SkillItem[];
 }
 
 export interface Project {
+  key?: string;
   title: string;
   year: string;
   tagline: string;
@@ -31,6 +35,7 @@ export interface Project {
 }
 
 export interface ExperienceItem {
+  key?: string;
   role: string;
   org: string;
   period: string;
@@ -65,13 +70,13 @@ export const PORTFOLIO: Portfolio = {
   initials: 'PD',
   role: 'Frontend Software Engineer',
   tagline:
-    'I build Angular interfaces for banks and fintech by day, and playful ones like this by night.',
+    'I build clean, thoughtful Angular interfaces by day, and playful ones like this by night.',
   location: 'Gurugram, Haryana, India',
   email: 'priyaleedahiya@gmail.com',
   resumeUrl: '',
   about: [
-    "I'm a frontend software engineer who loves building responsive, user-friendly web apps with clean, scalable code. At ScoreMe Solutions I build Angular screens for a digital lending platform used by banks: loan journeys for home, vehicle, education and government-scheme loans, GST renewal, maker/checker workflows and verification integrations like PAN, UPI and TAN.",
-    "I like working across the stack too. I've built a GST reporting module in Python for our rule-engine platform, and moved its internal dashboard over to Angular.",
+    "I'm a frontend software engineer who loves building responsive, user-friendly web apps with clean, scalable code. Most of my days are spent in Angular and TypeScript, turning long forms and multi-step workflows into screens that feel simple to use, and connecting them to APIs.",
+    "I like working across the stack too, and I've built backend pieces in Python and moved internal dashboards over to Angular. I care about the small details, like clear error messages, accessible markup and consistent design, and I enjoy working closely with designers, product and other developers to get them right.",
     "I grew up in Rohtak, where I did my BCA, then finished an MCA at Kurukshetra University and presented a paper on green cloud computing in 2024. Away from work I make small, playful things, like this paintable portfolio and NOVA, a voice assistant that lives in the browser. I'm always learning, and always up for teaming up on projects that make the web nicer to use.",
   ],
   facts: [
@@ -89,7 +94,11 @@ export const PORTFOLIO: Portfolio = {
     },
     {
       label: 'Currently',
-      value: 'Frontend engineer at ScoreMe',
+      value: 'Frontend software engineer',
+    },
+    {
+      label: 'Strengths',
+      value: 'Teamwork · Communication · Ownership',
     },
   ],
   skills: [
@@ -180,6 +189,17 @@ export const PORTFOLIO: Portfolio = {
         },
       ],
     },
+    {
+      name: 'Ways of working',
+      items: [
+        { name: 'Teamwork', level: 90 },
+        { name: 'Communication', level: 85 },
+        { name: 'Problem solving', level: 85 },
+        { name: 'Attention to detail', level: 90 },
+        { name: 'Time management', level: 80 },
+        { name: 'Quick learner', level: 90 },
+      ],
+    },
   ],
   projects: [
     {
@@ -242,13 +262,14 @@ export const PORTFOLIO: Portfolio = {
       org: 'ScoreMe Solutions Pvt. Ltd',
       period: 'Aug 2025 — Present',
       summary:
-        'Angular screens for a digital lending platform used by banks, plus Python work on an internal rule-engine platform.',
+        'Building Angular features for a large web application, plus some Python work on internal tools.',
       highlights: [
-        'Built the GST renewal journey: loan type selection, editable loan amount, loan-offer integration and the GST OTP flow',
-        'Built the maker/checker deviation workflow with role-based actions, consent checks and a recommendation trail',
-        'Integrated PAN, EIN, Phone-to-UPI, Phone-to-Name and Company-to-TAN verification APIs',
-        'Strengthened frontend security for sensitive financial data across loan journeys',
-        'Built a GST reporting module in Python and moved the rule-engine dashboard to Angular',
+        'Built multi-step forms and guided flows with validation, editable fields and OTP verification',
+        'Built role-based review and approval workflows',
+        'Integrated third-party verification APIs into the frontend',
+        'Worked on frontend security for sensitive user data',
+        'Built a reporting module in Python and moved an internal dashboard to Angular',
+        'Work closely with designers, product and backend developers in an agile team',
       ],
     },
     {

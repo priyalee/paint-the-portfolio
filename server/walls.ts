@@ -22,6 +22,21 @@ import {
 const REGION_IDS = new Set(MURAL.shapes.map((s) => s.id));
 /** Wall writes (new marks + edits) allowed per visitor per hour. */
 const WRITES_PER_HOUR = 12;
+/**
+ * Marks allowed per wall from one network (hashed IP). The site already
+ * limits each browser to one; this stops a cleared browser or a second
+ * browser from adding more, while still letting a few people who share
+ * the same Wi-Fi (a home, an office) each leave their own.
+ */
+const MARKS_PER_NETWORK = 3;
+
+/** Refuses a new mark when this network already has its share on the wall. */
+async function checkNetworkShare(env: Env, table: 'mural_claims' | 'splashes', who: string, noun: string): Promise<void> {
+  const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ip_hash = ?`).bind(who).first<{ n: number }>();
+  if ((row?.n ?? 0) >= MARKS_PER_NETWORK) {
+    throw new HttpError(429, `You've already left your ${noun} on this wall — thank you! Find it with a hover.`);
+  }
+}
 
 interface Signature {
   color: string;
@@ -69,7 +84,11 @@ export async function mural(req: Request, env: Env, rest: string[]): Promise<Res
     const regionId = typeof body['regionId'] === 'string' ? body['regionId'] : '';
     if (!REGION_IDS.has(regionId)) throw new HttpError(400, 'That shape is not on the mural.');
     const sig = readSignature(body);
+    // A taken shape is refused before the rate limit, so trying one doesn't use up a write.
+    const taken = await env.DB.prepare('SELECT 1 FROM mural_claims WHERE region_id = ?').bind(regionId).first();
+    if (taken) throw new HttpError(409, 'Someone just painted that shape — pick another one.');
     const who = await visitorHash(req, env);
+    await checkNetworkShare(env, 'mural_claims', who, 'shape');
     await rateLimit(env, who, 'wall', WRITES_PER_HOUR, 3600_000);
 
     const token = randomToken();
@@ -141,6 +160,7 @@ export async function splashes(req: Request, env: Env, rest: string[]): Promise<
     }
     const sig = readSignature(body);
     const who = await visitorHash(req, env);
+    await checkNetworkShare(env, 'splashes', who, 'splash');
     await rateLimit(env, who, 'wall', WRITES_PER_HOUR, 3600_000);
 
     const token = randomToken();

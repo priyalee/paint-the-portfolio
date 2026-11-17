@@ -1,44 +1,40 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ApiStatus, api } from '@core/api';
 import { ContentStore } from '@core/content-store';
 import { PaintState } from '@core/paint-state';
+import { PaletteColor, THEMES } from '@core/palettes';
+import { CARD, CardColours, drawBack, drawFront, stackSides } from '@core/postcard-sides';
 import { canvasToBlob, downloadBlob } from '@core/snapshot';
-import { PORTFOLIO } from '@data/portfolio.data';
-import { THEMES } from '@core/palettes';
-import { MAX_FROM } from '@core/wall-limits';
-import {
-  drawArtwork,
-  drawFallbackArt,
-  drawPostmark,
-  drawStamp,
-  fitText,
-  layout,
-  wrapText,
-} from '@core/postcard-art';
+import { HEX_COLOR, MAX_FROM, MAX_MESSAGE, MAX_MESSAGE_LINES } from '@core/wall-limits';
 
 export interface PostcardSource {
   id: string;
-  /** Lower comes first; the first source gets the big left panel. */
+  /** Lower comes first; the first source gets the biggest panel. */
   order: number;
   snapshot: () => Promise<CanvasImageSource | null>;
 }
 
-export { MAX_FROM, MAX_MESSAGE } from '@core/wall-limits';
-const DEFAULT_MESSAGE = 'Wish you were here!';
-const FROM_KEY = 'ink-pigment:postcard-from';
+export type CardPaper = 'light' | 'dark';
+export type CardSide = 'front' | 'back';
 
-const W = 1600;
-const H = 1000;
+export { MAX_FROM, MAX_MESSAGE, MAX_MESSAGE_LINES } from '@core/wall-limits';
+export const DEFAULT_MESSAGE = 'Wish you were here!';
+const FROM_KEY = 'ink-pigment:postcard-from';
+/** The name the content starts with, before the owner fills in their own. */
+const PLACEHOLDER_NAME = 'your name';
 
 /**
- * Builds a postcard PNG out of whatever the visitor has painted on the
+ * Builds a two-sided postcard out of whatever the visitor has painted on the
  * current page. Sections register snapshot functions (see the
- * appPostcardSource directive); open() captures them and shows a preview
- * where the visitor adds a message, then downloads or shares the card.
+ * appPostcardSource directive); open() captures them and shows a preview.
  *
- * The visitor can also send the card to the site owner (send()), when the
- * backend is running: it is saved for review and, once approved in /admin,
- * shown on the postcard rack on the Contact page.
+ * Front: the painting with a "Greetings from" banner.
+ * Back: the visitor's message, a stamp in a colour they pick, and the
+ * owner's address. The card can be printed on light or dark paper.
+ *
+ * The visitor can download both sides, share them, or send the card to the
+ * site owner (when the backend is running): it is saved for review and,
+ * once approved in /admin, shown on the postcard rack on the Contact page.
  */
 @Injectable({ providedIn: 'root' })
 export class Postcard {
@@ -50,9 +46,23 @@ export class Postcard {
   /** Capturing the page's artwork. */
   readonly busy = signal(false);
   readonly lastMessage = signal('');
+
   readonly message = signal('');
   readonly from = signal(readFrom());
-  readonly previewUrl = signal<string | null>(null);
+  readonly paper = signal<CardPaper>('light');
+  readonly stamp = signal('#E4572E');
+  /** Which side the preview shows. */
+  readonly side = signal<CardSide>('front');
+
+  readonly frontUrl = signal<string | null>(null);
+  readonly backUrl = signal<string | null>(null);
+  readonly ready = computed(() => !!this.frontUrl() && !!this.backUrl());
+
+  /** Stamp colours on offer: the visitor's current palette. */
+  readonly stampColours = computed<readonly PaletteColor[]>(() => this.state.palette().colors);
+  /** The owner's name for buttons ("Send it to Priyalee"), or '' before it is set. */
+  readonly ownerName = computed(() => firstName(this.content().name));
+
   readonly canShare = signal(false);
   /** Sending needs the backend; without it the card can only be downloaded or shared. */
   readonly canSend = inject(ApiStatus).available;
@@ -60,7 +70,10 @@ export class Postcard {
   readonly sendError = signal('');
 
   private images: CanvasImageSource[] = [];
-  private blob: Blob | null = null;
+  private front: HTMLCanvasElement | null = null;
+  private back: HTMLCanvasElement | null = null;
+  private frontBlob: Blob | null = null;
+  private backBlob: Blob | null = null;
   private renderId = 0;
 
   register(source: PostcardSource): () => void {
@@ -83,6 +96,10 @@ export class Postcard {
       this.images = (await Promise.all(sources.map((s) => s.snapshot().catch(() => null))))
         .filter((img): img is CanvasImageSource => !!img)
         .slice(0, 3);
+      // Start from the page as it is now: its paper and the colour in hand.
+      this.paper.set(this.state.theme() === 'chalk' ? 'dark' : 'light');
+      this.stamp.set(this.state.activeColor().hex);
+      this.side.set('front');
       this.isOpen.set(true);
       await this.render();
     } catch (err) {
@@ -97,38 +114,77 @@ export class Postcard {
   close(): void {
     this.isOpen.set(false);
     this.sendError.set('');
-    const url = this.previewUrl();
-    if (url) URL.revokeObjectURL(url);
-    this.previewUrl.set(null);
-    this.blob = null;
+    for (const url of [this.frontUrl(), this.backUrl()]) if (url) URL.revokeObjectURL(url);
+    this.frontUrl.set(null);
+    this.backUrl.set(null);
+    this.front = this.back = null;
+    this.frontBlob = this.backBlob = null;
     this.images = [];
   }
 
-  /** Redraws the card, e.g. after the message or name changed. */
-  async render(): Promise<void> {
-    const id = ++this.renderId;
-    const blob = await canvasToBlob(this.draw());
-    if (id !== this.renderId || !this.isOpen()) return;
-    this.blob = blob;
-    const old = this.previewUrl();
-    if (old) URL.revokeObjectURL(old);
-    this.previewUrl.set(URL.createObjectURL(blob));
-    this.canShare.set(!!navigator.canShare?.({ files: [this.file(blob)] }));
+  // ----------------------------------------------------------- editing
+
+  /** Keeps the message within the length and line limits. */
+  setMessage(value: string): string {
+    const clean = value.replace(/\r\n?/g, '\n').split('\n').slice(0, MAX_MESSAGE_LINES).join('\n').slice(0, MAX_MESSAGE);
+    this.message.set(clean);
+    return clean;
   }
 
-  download(): void {
-    if (!this.blob) return;
-    downloadBlob(this.blob, this.filename());
+  setPaper(paper: CardPaper): void {
+    if (paper === this.paper()) return;
+    this.paper.set(paper);
+    void this.render();
+  }
+
+  setStamp(hex: string): void {
+    if (!HEX_COLOR.test(hex)) return;
+    this.stamp.set(hex.toUpperCase());
+    this.side.set('back');
+    void this.render('back');
+  }
+
+  // ----------------------------------------------------------- rendering
+
+  /** Redraws the card. Only the back changes when the message, name or stamp do. */
+  async render(which: 'both' | 'back' = 'both'): Promise<void> {
+    const id = ++this.renderId;
+    const colours = this.colours();
+    const front = which === 'both' || !this.front ? this.drawSide((ctx) => this.drawFrontSide(ctx, colours)) : this.front;
+    const back = this.drawSide((ctx) => this.drawBackSide(ctx, colours));
+    const [frontBlob, backBlob] = await Promise.all([
+      front === this.front && this.frontBlob ? this.frontBlob : canvasToBlob(front),
+      canvasToBlob(back),
+    ]);
+    if (id !== this.renderId || !this.isOpen()) return;
+
+    if (front !== this.front || !this.frontUrl()) {
+      this.front = front;
+      this.frontBlob = frontBlob;
+      swapUrl(this.frontUrl, frontBlob);
+    }
+    this.back = back;
+    this.backBlob = backBlob;
+    swapUrl(this.backUrl, backBlob);
+    this.canShare.set(!!navigator.canShare?.({ files: this.files() }));
+  }
+
+  // ----------------------------------------------------------- actions
+
+  /** Saves one PNG with the front above the back. */
+  async download(): Promise<void> {
+    if (!this.front || !this.back) return;
+    downloadBlob(await canvasToBlob(stackSides(this.front, this.back)), `${this.basename()}.png`);
     this.remember();
     this.flash('Postcard saved to your downloads');
     this.close();
   }
 
   async share(): Promise<void> {
-    if (!this.blob) return;
+    if (!this.frontBlob || !this.backBlob) return;
     try {
       await navigator.share({
-        files: [this.file(this.blob)],
+        files: this.files(),
         title: 'A hand-painted postcard',
         text: [`Greetings from ${cardTitle(this.content().name)}`, publicSite()].filter(Boolean).join(' — '),
       });
@@ -139,9 +195,9 @@ export class Postcard {
     }
   }
 
-  /** Sends the card to the site owner (kept private until they approve it). */
+  /** Sends both sides to the site owner (kept private until they approve it). */
   async send(): Promise<void> {
-    if (!this.blob || this.sending()) return;
+    if (!this.front || !this.back || this.sending()) return;
     this.sending.set(true);
     this.sendError.set('');
     try {
@@ -149,7 +205,8 @@ export class Postcard {
         method: 'POST',
         body: {
           id: crypto.randomUUID?.() ?? String(Date.now()),
-          image: await toJpeg(this.blob),
+          image: toJpeg(this.front),
+          back: toJpeg(this.back),
           message: this.message().trim(),
           from: this.from().trim().slice(0, MAX_FROM),
         },
@@ -159,7 +216,7 @@ export class Postcard {
         return;
       }
       this.remember();
-      this.flash(`Postcard sent to ${realName(this.content().name) || 'the studio'}. Thank you!`);
+      this.flash(`Postcard sent to ${this.ownerName() || 'the studio'}. Thank you!`);
       this.close();
     } catch {
       this.sendError.set('Could not send the postcard — please try again.');
@@ -168,128 +225,57 @@ export class Postcard {
     }
   }
 
-  /** The owner's name for buttons ("Send it to Priyalee"), or '' before it is set. */
-  ownerName(): string {
-    return realName(this.content().name);
-  }
-
   // ----------------------------------------------------------- drawing
 
-  private draw(): HTMLCanvasElement {
+  private colours(): CardColours {
+    return THEMES[this.paper() === 'dark' ? 'chalk' : 'paper'];
+  }
+
+  private drawSide(paint: (ctx: CanvasRenderingContext2D) => void): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = CARD.w;
+    canvas.height = CARD.h;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas unavailable');
-
-    // The card is printed on the theme's own paper, not on whatever colour
-    // the visitor painted the page — that keeps the text readable.
-    const { paper, paper2, ink, muted } = THEMES[this.state.theme()];
-    const palette = this.state.palette();
-    const now = new Date();
-
-    ctx.fillStyle = paper;
-    ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = ink;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(24, 24, W - 48, H - 48);
-
-    // ---- Front: the painting(s)
-    const art = { x: 72, y: 72, w: 900, h: H - 144 };
-    if (this.images.length) {
-      layout(this.images.length, art).forEach((box, i) => drawArtwork(ctx, this.images[i], box, ink));
-    } else {
-      drawFallbackArt(ctx, art, palette.colors.map((c) => c.hex), ink, paper2);
-    }
-
-    // ---- Back: dashed divider, stamp, heading, message, signature
-    ctx.save();
-    ctx.strokeStyle = muted;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 10]);
-    ctx.beginPath();
-    ctx.moveTo(1024, 110);
-    ctx.lineTo(1024, H - 110);
-    ctx.stroke();
-    ctx.restore();
-
-    const col = { x: 1072, w: W - 72 - 1072 };
-    const stamp = { x: W - 72 - 160, y: 72, w: 160, h: 186 };
-    drawStamp(ctx, stamp, this.state.activeColor().hex, ink, paper);
-    drawPostmark(ctx, stamp.x - 70, stamp.y + 118, now, ink);
-
-    // Heading + message block, centred in the space under the stamp.
-    const title = wrapText(ctx, cardTitle(this.content().name), col.w, 2, 60, '600', '"Fraunces", serif');
-    const titleLine = title.size * 1.08;
-    const ruleGap = 68;
-    const rules = 4;
-    const blockH = 38 + title.lines.length * titleLine + 118 + (rules - 1) * ruleGap;
-    const top = stamp.y + stamp.h + 40;
-    const bottom = H - 130;
-    let y = top + Math.max(0, (bottom - top - blockH) / 2) + 22;
-
-    ctx.fillStyle = muted;
-    ctx.font = '700 22px "DM Sans", sans-serif';
-    ctx.letterSpacing = '4px';
-    ctx.fillText('GREETINGS FROM', col.x, y);
-    ctx.letterSpacing = '0px';
-
-    ctx.fillStyle = ink;
-    ctx.font = `600 ${title.size}px "Fraunces", serif`;
-    y += 8;
-    for (const line of title.lines) {
-      y += titleLine;
-      ctx.fillText(line, col.x, y);
-    }
-
-    // Ruled writing lines with the handwritten message sitting on them.
-    const firstRule = y + 118;
-    ctx.strokeStyle = muted;
-    ctx.globalAlpha = 0.35;
-    ctx.lineWidth = 1.5;
-    for (let i = 0; i < rules; i++) {
-      const ry = firstRule + i * ruleGap;
-      ctx.beginPath();
-      ctx.moveTo(col.x, ry);
-      ctx.lineTo(col.x + col.w, ry);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    const message = this.message().trim() || DEFAULT_MESSAGE;
-    ctx.fillStyle = ink;
-    const body = wrapText(ctx, message, col.w - 8, rules - 1, 60, '500', '"Caveat", cursive');
-    body.lines.forEach((line, i) => ctx.fillText(line, col.x + 4, firstRule + i * ruleGap - 12));
-
-    // Signature on the last ruled line, right-aligned.
-    const from = this.from().trim();
-    ctx.save();
-    ctx.textAlign = 'right';
-    fitText(ctx, `— ${from || 'a visitor'}`, col.x + col.w, firstRule + (rules - 1) * ruleGap - 12, col.w, 50, '600', '"Caveat", cursive');
-    ctx.restore();
-
-    // Address line: only a real, public address is printed (never localhost).
-    const site = publicSite();
-    if (site) {
-      ctx.fillStyle = muted;
-      ctx.font = '700 22px "DM Sans", sans-serif';
-      ctx.letterSpacing = '2px';
-      fitText(ctx, site.toUpperCase(), col.x, H - 84, col.w, 22, '700', '"DM Sans", sans-serif');
-      ctx.letterSpacing = '0px';
-    }
-
+    paint(ctx);
     return canvas;
+  }
+
+  private drawFrontSide(ctx: CanvasRenderingContext2D, colours: CardColours): void {
+    drawFront(ctx, colours, {
+      images: this.images,
+      title: cardTitle(this.content().name),
+      site: publicSite(),
+    });
+  }
+
+  private drawBackSide(ctx: CanvasRenderingContext2D, colours: CardColours): void {
+    const c = this.content();
+    const name = realName(c.name);
+    drawBack(ctx, colours, {
+      message: this.message().trim() || DEFAULT_MESSAGE,
+      from: this.from().trim() || 'a visitor',
+      stamp: this.stamp(),
+      stampLabel: name && c.initials.trim() ? [c.initials.trim().slice(0, 3)] : ['Ink &', 'Pigment'],
+      to: name ? [name, c.role, publicSite() ?? ''] : ['The Ink & Pigment studio', '', publicSite() ?? ''],
+      date: new Date(),
+    });
   }
 
   // ----------------------------------------------------------- helpers
 
-  private file(blob: Blob): File {
-    return new File([blob], this.filename(), { type: 'image/png' });
+  private files(): File[] {
+    if (!this.frontBlob || !this.backBlob) return [];
+    const base = this.basename();
+    return [
+      new File([this.frontBlob], `${base}-front.png`, { type: 'image/png' }),
+      new File([this.backBlob], `${base}-back.png`, { type: 'image/png' }),
+    ];
   }
 
-  private filename(): string {
+  private basename(): string {
     const name = realName(this.content().name);
-    return `postcard-${name ? slug(name) : 'ink-pigment'}.png`;
+    return `postcard-${name ? slug(name) : 'ink-pigment'}`;
   }
 
   private remember(): void {
@@ -309,10 +295,14 @@ export class Postcard {
 /** The owner's name, or '' while the content still has the placeholder. */
 function realName(name: string): string {
   const n = name.trim();
-  return n && n.toLowerCase() !== PORTFOLIO.name.toLowerCase() ? n : '';
+  return n && n.toLowerCase() !== PLACEHOLDER_NAME ? n : '';
 }
 
-/** "Priyalee's portfolio", "James' portfolio", or the site name before a name is set. */
+function firstName(name: string): string {
+  return realName(name).split(/\s+/)[0] ?? '';
+}
+
+/** "Priyalee Dahiya's portfolio", "James' portfolio", or the site name before a name is set. */
 function cardTitle(name: string): string {
   const n = realName(name);
   if (!n) return 'the Ink & Pigment studio';
@@ -333,14 +323,19 @@ function publicSite(): string | null {
   return local || !host ? null : host.replace(/^www\./, '');
 }
 
-/** A smaller JPEG copy of the card for sending (keeps uploads around 150–400 KB). */
-async function toJpeg(png: Blob): Promise<string> {
-  const bitmap = await createImageBitmap(png);
+/** Replaces a preview object URL, freeing the old one. */
+function swapUrl(target: WritableSignal<string | null>, blob: Blob): void {
+  const old = target();
+  target.set(URL.createObjectURL(blob));
+  if (old) URL.revokeObjectURL(old);
+}
+
+/** A smaller JPEG copy of one side for sending (about 100–300 KB). */
+function toJpeg(side: HTMLCanvasElement): string {
   const canvas = document.createElement('canvas');
   canvas.width = 1280;
-  canvas.height = Math.round((bitmap.height / bitmap.width) * 1280);
-  canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
+  canvas.height = Math.round((side.height / side.width) * 1280);
+  canvas.getContext('2d')?.drawImage(side, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 

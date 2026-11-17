@@ -51,9 +51,11 @@ import { EditorSession } from '../editor-session';
     <section class="card-block">
       <h3>3 · Publish</h3>
       <p class="tip">
-        Edits are a draft in <em>this browser only</em>. To put them live for everyone, download
-        <code>content.json</code> and replace <code>public/content.json</code> in the project (or
-        upload it to your host). No code changes needed.
+        Edits are a draft in <em>this browser only</em>. To put them live for everyone, open
+        <code>/admin</code> on the live site, sign in and press <strong>Publish to the live site</strong>
+        on the Content tab. Without the backend, download <code>content.json</code> and replace
+        <code>public/content.json</code> in the project instead (content published from
+        <code>/admin</code> always wins over that file).
       </p>
       <div class="row wrap">
         <button type="button" class="btn" (click)="download()">

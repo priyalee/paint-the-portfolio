@@ -115,7 +115,8 @@ export class BrushReveal {
   }
 
   private brushTo(e: PointerEvent): void {
-    if (!this.width) return;
+    // In Colour mode the sketch is already fully coloured: don't record invisible strokes.
+    if (!this.width || this.state.mode() === 'color') return;
     const rect = this.canvas().nativeElement.getBoundingClientRect();
     const x = (e.clientX - rect.left) / this.width;
     const y = (e.clientY - rect.top) / this.width; // normalised to width on purpose

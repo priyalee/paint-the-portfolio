@@ -1,6 +1,5 @@
 import { luminance } from '@core/paint-state';
 import { sizeOf } from '@core/snapshot';
-import { splatPaths } from '@shared/art/splat';
 
 /** Canvas drawing helpers for the postcard (kept apart from the service logic). */
 
@@ -13,10 +12,30 @@ export interface Box {
 
 const SHADOW = 10;
 
-/** One big panel, two stacked, or one big + two side by side underneath. */
+/**
+ * Splits the art area for 1–3 paintings. In a wide area they sit side by
+ * side (one big + two stacked on the right); in a tall one they stack.
+ */
 export function layout(count: number, a: Box): Box[] {
   const gap = 28;
   if (count <= 1) return [a];
+  if (a.w > a.h * 1.3) {
+    if (count === 2) {
+      const w = (a.w - gap) / 2;
+      return [
+        { ...a, w },
+        { ...a, x: a.x + w + gap, w },
+      ];
+    }
+    const big = a.w * 0.58;
+    const w = a.w - big - gap;
+    const h = (a.h - gap) / 2;
+    return [
+      { ...a, w: big },
+      { x: a.x + big + gap, y: a.y, w, h },
+      { x: a.x + big + gap, y: a.y + h + gap, w, h },
+    ];
+  }
   if (count === 2) {
     const h = (a.h - gap) / 2;
     return [
@@ -60,51 +79,9 @@ export function drawArtwork(
 }
 
 /**
- * Used when the current page has nothing to capture: a burst of paint
- * splats in the visitor's palette, so the card is never blank.
- */
-export function drawFallbackArt(
-  ctx: CanvasRenderingContext2D,
-  box: Box,
-  colours: string[],
-  ink: string,
-  paper: string,
-): void {
-  const b = { x: box.x, y: box.y, w: box.w - SHADOW, h: box.h - SHADOW };
-  ctx.fillStyle = ink;
-  ctx.fillRect(b.x + SHADOW, b.y + SHADOW, b.w, b.h);
-  ctx.fillStyle = paper;
-  ctx.fillRect(b.x, b.y, b.w, b.h);
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(b.x, b.y, b.w, b.h);
-  ctx.clip();
-  const spots = [
-    [0.2, 0.3, 96],
-    [0.42, 0.58, 120],
-    [0.7, 0.26, 90],
-    [0.76, 0.7, 118],
-    [0.18, 0.78, 76],
-    [0.5, 0.12, 56],
-    [0.9, 0.48, 60],
-  ];
-  const seed = Math.floor(Math.random() * 1e6);
-  spots.forEach(([fx, fy, size], i) => {
-    ctx.save();
-    ctx.translate(b.x + b.w * fx, b.y + b.h * fy);
-    ctx.fillStyle = colours[i % colours.length];
-    for (const d of splatPaths(seed + i * 7919, size)) ctx.fill(new Path2D(d));
-    ctx.restore();
-  });
-  ctx.restore();
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(b.x, b.y, b.w, b.h);
-}
-
-/**
- * A postage stamp in the visitor's active colour, with perforated edges.
- * The lettering picks black or white for contrast against the colour.
+ * A postage stamp in the chosen colour, with perforated edges. `label` is
+ * the big lettering (one short line, like initials, or two lines); the
+ * lettering picks black or white for contrast against the colour.
  */
 export function drawStamp(
   ctx: CanvasRenderingContext2D,
@@ -112,6 +89,7 @@ export function drawStamp(
   color: string,
   ink: string,
   paper: string,
+  label: string[],
 ): void {
   const { x, y, w, h } = box;
   const r = 7;
@@ -147,9 +125,12 @@ export function drawStamp(
   ctx.globalAlpha = 1;
   ctx.fillStyle = text;
   ctx.textAlign = 'center';
-  ctx.font = '600 30px "Fraunces", serif';
-  ctx.fillText('Ink &', x + w / 2, y + h / 2 - 4);
-  ctx.fillText('Pigment', x + w / 2, y + h / 2 + 30);
+  if (label.length === 1) {
+    fitText(ctx, label[0], x + w / 2, y + h / 2 + 14, w - 44, 58, '600', '"Fraunces", serif');
+  } else {
+    fitText(ctx, label[0], x + w / 2, y + h / 2 - 4, w - 44, 30, '600', '"Fraunces", serif');
+    fitText(ctx, label[1] ?? '', x + w / 2, y + h / 2 + 30, w - 44, 30, '600', '"Fraunces", serif');
+  }
   ctx.font = '700 14px "DM Sans", sans-serif';
   ctx.fillText('HAND PAINTED', x + w / 2, y + h - 30);
   ctx.restore();
@@ -229,7 +210,12 @@ export function wrapText(
   return { lines, size: px };
 }
 
+/** Wraps each paragraph of `text` (the visitor's own line breaks are kept). */
 function breakLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  return text.split('\n').flatMap((para) => (para.trim() ? wrapParagraph(ctx, para, maxWidth) : ['']));
+}
+
+function wrapParagraph(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   let line = '';
   for (let word of text.split(/\s+/).filter(Boolean)) {

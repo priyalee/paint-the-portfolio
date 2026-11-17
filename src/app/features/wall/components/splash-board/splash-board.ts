@@ -17,7 +17,7 @@ import { RecentArtists } from '../recent-artists/recent-artists';
 import { SignForm, Signature } from '../sign-form/sign-form';
 import { WallPalette } from '../wall-palette/wall-palette';
 import { PendingSplash, SplashCanvas } from '../splash-canvas/splash-canvas';
-import { readFlag, writeFlag } from '../signed-flag';
+import { clearFlag, readFlag, writeFlag } from '../signed-flag';
 
 const SIGNED_KEY = 'ink-pigment:splash-signed';
 /** Keeps splashes (and their droplets) mostly on the wall. */
@@ -68,7 +68,16 @@ export class SplashBoard {
   }
 
   private async load(): Promise<void> {
-    this.splashes.set(await this.backend.list());
+    const splashes = await this.backend.list();
+    if (!splashes) return; // couldn't load: keep what we have, and trust the saved flag
+    this.splashes.set(splashes);
+    // Forget a remembered splash that is no longer on the wall (removed in /admin).
+    const id = this.signedId();
+    if (id && !splashes.some((s) => s.id === id && this.backend.isMine(s.id))) {
+      clearFlag(SIGNED_KEY);
+      this.signedId.set(null);
+      this.editing.set(false);
+    }
   }
 
   /** Throws (or re-throws) the pending splash at a point on the wall. */

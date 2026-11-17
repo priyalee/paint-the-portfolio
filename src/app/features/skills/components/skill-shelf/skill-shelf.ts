@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { skillJarId, skillShelfPrefix } from '@core/paint-keys';
 import { SkillGroup } from '@data/portfolio.data';
 import { PaintBlock } from '@shared/paint/paint-block.directive';
 import { PaintJar } from '../paint-jar/paint-jar';
@@ -9,11 +10,13 @@ import { PaintJar } from '../paint-jar/paint-jar';
   imports: [PaintJar, PaintBlock],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div [appPaintBlock]="'skill-' + index() + '-'" [blockTitle]="group().name + ' shelf'">
+    <div [appPaintBlock]="shelfPrefix(groupKey())" [blockTitle]="group().name + ' shelf'">
       <h3>{{ group().name }}</h3>
       <ul>
         @for (skill of group().items; track $index; let i = $index) {
-          <li><app-paint-jar [skill]="skill" [group]="index()" [index]="i" /></li>
+          <li>
+            <app-paint-jar [skill]="skill" [regionId]="jarId(groupKey(), skillKeys()[i])" [group]="index()" [index]="i" />
+          </li>
         }
       </ul>
     </div>
@@ -38,6 +41,11 @@ import { PaintJar } from '../paint-jar/paint-jar';
   `,
 })
 export class SkillShelf {
+  /** Stable keys from core/paint-keys: the shelf's, and one per skill on it. */
+  readonly groupKey = input.required<string>();
+  readonly skillKeys = input.required<string[]>();
+  protected readonly shelfPrefix = skillShelfPrefix;
+  protected readonly jarId = skillJarId;
   readonly group = input.required<SkillGroup>();
   readonly index = input.required<number>();
 }

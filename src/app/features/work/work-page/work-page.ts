@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ContentStore } from '@core/content-store';
+import { projectRegionId, siteKeys } from '@core/paint-keys';
 import { Reveal } from '@shared/directives/reveal.directive';
 import { PostcardSource } from '@shared/directives/postcard-source.directive';
 import { PaintBlock } from '@shared/paint/paint-block.directive';
@@ -24,6 +25,7 @@ import { ProjectChip } from '../components/project-chip/project-chip';
             <app-project-chip
               [project]="p"
               [index]="i"
+              [regionId]="regionOf(keys()[i])"
               [class.tilt-left]="i % 2 === 0"
               [class.tilt-right]="i % 2 === 1"
               appReveal
@@ -43,4 +45,7 @@ import { ProjectChip } from '../components/project-chip/project-chip';
 })
 export class WorkPage {
   protected readonly data = inject(ContentStore).content;
+  /** Stable paint keys, so paint stays on the same chip if projects are reordered. */
+  protected readonly keys = computed(() => siteKeys(this.data()).projects);
+  protected readonly regionOf = projectRegionId;
 }

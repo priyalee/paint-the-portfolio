@@ -5,7 +5,9 @@
  */
 export const MAX_NAME = 24;
 export const MAX_PLACE = 32;
-export const MAX_MESSAGE = 80;
+/** Postcard message: room for a proper note, on at most MAX_MESSAGE_LINES lines. */
+export const MAX_MESSAGE = 140;
+export const MAX_MESSAGE_LINES = 6;
 export const MAX_FROM = 24;
 
 /** Size of the splash wall in SVG units. Splashes store positions in these units. */

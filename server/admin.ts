@@ -1,7 +1,7 @@
 import { MARK_ID } from '../src/app/core/wall-limits';
 import type { Env } from './env';
 import { HttpError, json, readJson, safeEqual } from './http';
-import { PostcardRow, image, toPublic } from './postcards';
+import { POSTCARD_COLUMNS, PostcardRow, image, toPublic } from './postcards';
 
 const MAX_CONTENT_BYTES = 200_000;
 
@@ -11,7 +11,8 @@ const MAX_CONTENT_BYTES = 200_000;
  *
  * GET    /api/admin/check
  * GET    /api/admin/postcards?status=pending|approved|hidden
- * GET    /api/admin/postcards/:id/image
+ * GET    /api/admin/postcards/:id/image   (front)
+ * GET    /api/admin/postcards/:id/back    (back, when the card has one)
  * POST   /api/admin/postcards/:id   { status }
  * DELETE /api/admin/postcards/:id
  * DELETE /api/admin/mural/:id
@@ -33,14 +34,20 @@ export async function admin(req: Request, env: Env, rest: string[]): Promise<Res
       const status = new URL(req.url).searchParams.get('status') ?? 'pending';
       if (!['pending', 'approved', 'hidden'].includes(status)) throw new HttpError(400, 'Unknown status.');
       const { results } = await env.DB.prepare(
-        'SELECT id, message, sender, status, created_at FROM postcards WHERE status = ? ORDER BY created_at DESC LIMIT 100',
+        `SELECT ${POSTCARD_COLUMNS} FROM postcards WHERE status = ? ORDER BY created_at DESC LIMIT 100`,
       )
         .bind(status)
         .all<PostcardRow>();
-      return json(results.map((r) => ({ ...toPublic(r), imageUrl: `/api/admin/postcards/${r.id}/image` })));
+      return json(
+        results.map((r) => ({
+          ...toPublic(r),
+          imageUrl: `/api/admin/postcards/${r.id}/image`,
+          backUrl: r.has_back ? `/api/admin/postcards/${r.id}/back` : null,
+        })),
+      );
     }
     if (id && !MARK_ID.test(id)) throw new HttpError(400, 'Invalid id.');
-    if (id && sub === 'image' && method === 'GET') return image(env, id, true);
+    if (id && (sub === 'image' || sub === 'back') && method === 'GET') return image(env, id, true, sub === 'back');
     if (id && !sub && method === 'POST') {
       const { status } = await readJson<{ status?: string }>(req);
       if (!status || !['pending', 'approved', 'hidden'].includes(status)) throw new HttpError(400, 'Unknown status.');

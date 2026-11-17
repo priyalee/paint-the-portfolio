@@ -75,14 +75,16 @@ const LID = 'M18 6h54a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4v-8a4 4 0 0 
 })
 export class PaintJar {
   readonly skill = input.required<SkillItem>();
-  /** Shelf index and position on the shelf — together they form the region id. */
+  /** Paint-region id from core/paint-keys (skillJarId); "-paint" / "-lid" are added. */
+  readonly regionId = input.required<string>();
+  /** Shelf index and position on the shelf, only used for unique clip-path ids. */
   readonly group = input.required<number>();
   readonly index = input.required<number>();
 
   protected readonly jar = JAR;
   protected readonly lid = LID;
   /** Must match siteRegionIds() in core/chapters.ts */
-  protected readonly id = computed(() => `skill-${this.group()}-${this.index()}`);
+  protected readonly id = this.regionId;
   protected readonly clipId = computed(() => `jar-clip-${this.group()}-${this.index()}`);
 
   /** Wavy-topped liquid (y 116 = empty, y 34 = full). */

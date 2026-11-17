@@ -1,9 +1,12 @@
-import { MARK_ID, MAX_FROM, MAX_MESSAGE } from '../src/app/core/wall-limits';
+import { MARK_ID, MAX_FROM, MAX_MESSAGE, MAX_MESSAGE_LINES } from '../src/app/core/wall-limits';
 import type { Env } from './env';
-import { HttpError, cleanText, json, rateLimit, readJson, visitorHash } from './http';
+import { HttpError, cleanMultiline, cleanText, json, rateLimit, readJson, visitorHash } from './http';
 
-/** Largest postcard image accepted (the site sends ~150–400 KB JPEGs). */
-const MAX_IMAGE_BYTES = 1_200_000;
+/**
+ * Largest image accepted per side (the site sends ~100–300 KB JPEGs). Both
+ * sides live in one database row, which D1 caps at 2 MB.
+ */
+const MAX_IMAGE_BYTES = 800_000;
 const POSTCARDS_PER_HOUR = 3;
 const RACK_SIZE = 24;
 
@@ -13,7 +16,12 @@ export interface PostcardRow {
   sender: string;
   status: string;
   created_at: number;
+  /** 1 when the card has a written back side (cards sent before two-sided postcards don't). */
+  has_back: number;
 }
+
+/** The columns every postcard listing selects. */
+export const POSTCARD_COLUMNS = 'id, message, sender, status, created_at, back IS NOT NULL AS has_back';
 
 export function toPublic(r: PostcardRow) {
   return {
@@ -23,18 +31,20 @@ export function toPublic(r: PostcardRow) {
     status: r.status,
     createdAt: r.created_at,
     imageUrl: `/api/postcards/${r.id}/image`,
+    backUrl: r.has_back ? `/api/postcards/${r.id}/back` : null,
   };
 }
 
 /**
  * GET  /api/postcards            → approved postcards (the public rack)
  * POST /api/postcards            → send a postcard to the owner (pending until approved)
- * GET  /api/postcards/:id/image  → the image of an approved postcard
+ * GET  /api/postcards/:id/image  → the front (painting) of an approved postcard
+ * GET  /api/postcards/:id/back   → its back (message side)
  */
 export async function postcards(req: Request, env: Env, rest: string[], ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
   if (req.method === 'GET' && rest.length === 0) {
     const { results } = await env.DB.prepare(
-      `SELECT id, message, sender, status, created_at FROM postcards
+      `SELECT ${POSTCARD_COLUMNS} FROM postcards
        WHERE status = 'approved' ORDER BY created_at DESC LIMIT ?`,
     )
       .bind(RACK_SIZE)
@@ -42,24 +52,26 @@ export async function postcards(req: Request, env: Env, rest: string[], ctx?: { 
     return json(results.map(toPublic), 200, { 'cache-control': 'public, max-age=60' });
   }
 
-  if (req.method === 'GET' && rest.length === 2 && rest[1] === 'image') {
-    return image(env, rest[0], false);
+  if (req.method === 'GET' && rest.length === 2 && (rest[1] === 'image' || rest[1] === 'back')) {
+    return image(env, rest[0], false, rest[1] === 'back');
   }
 
   if (req.method === 'POST' && rest.length === 0) {
-    const body = await readJson(req, MAX_IMAGE_BYTES * 1.4 + 4_000);
+    const body = await readJson(req, MAX_IMAGE_BYTES * 2 * 1.4 + 4_000);
     const id = typeof body['id'] === 'string' && MARK_ID.test(body['id']) ? body['id'] : crypto.randomUUID();
-    const { bytes, type } = decodeImage(body['image']);
-    const message = cleanText(body['message'], MAX_MESSAGE);
+    const front = decodeImage(body['image']);
+    // Older copies of the site only send the front.
+    const back = body['back'] === undefined ? null : decodeImage(body['back']);
+    const message = cleanMultiline(body['message'], MAX_MESSAGE, MAX_MESSAGE_LINES);
     const sender = cleanText(body['from'], MAX_FROM) || 'a visitor';
     const who = await visitorHash(req, env);
     await rateLimit(env, who, 'postcard', POSTCARDS_PER_HOUR, 3600_000);
 
     await env.DB.prepare(
-      `INSERT INTO postcards (id, message, sender, image, image_type, status, created_at, ip_hash)
-       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?) ON CONFLICT DO NOTHING`,
+      `INSERT INTO postcards (id, message, sender, image, image_type, back, back_type, status, created_at, ip_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?) ON CONFLICT DO NOTHING`,
     )
-      .bind(id, message, sender, bytes, type, Date.now(), who)
+      .bind(id, message, sender, front.bytes, front.type, back?.bytes ?? null, back?.type ?? null, Date.now(), who)
       .run();
 
     const mail = notifyOwner(env, sender, message);
@@ -71,13 +83,14 @@ export async function postcards(req: Request, env: Env, rest: string[], ctx?: { 
   throw new HttpError(405, 'Not allowed.');
 }
 
-/** Serves a postcard image. Pending/hidden ones only for the admin. */
-export async function image(env: Env, id: string, admin: boolean): Promise<Response> {
+/** Serves one side of a postcard. Pending/hidden ones only for the admin. */
+export async function image(env: Env, id: string, admin: boolean, back = false): Promise<Response> {
   if (!MARK_ID.test(id)) throw new HttpError(404, 'Not found.');
-  const row = await env.DB.prepare('SELECT image, image_type, status FROM postcards WHERE id = ?')
+  const cols = back ? 'back AS image, back_type AS image_type' : 'image, image_type';
+  const row = await env.DB.prepare(`SELECT ${cols}, status FROM postcards WHERE id = ?`)
     .bind(id)
-    .first<{ image: ArrayBuffer | number[]; image_type: string; status: string }>();
-  if (!row || (!admin && row.status !== 'approved')) throw new HttpError(404, 'Not found.');
+    .first<{ image: ArrayBuffer | number[] | null; image_type: string | null; status: string }>();
+  if (!row?.image || !row.image_type || (!admin && row.status !== 'approved')) throw new HttpError(404, 'Not found.');
   const bytes = row.image instanceof ArrayBuffer ? row.image : new Uint8Array(row.image);
   return new Response(bytes, {
     headers: {

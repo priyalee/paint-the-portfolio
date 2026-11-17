@@ -35,7 +35,7 @@ Built with **Angular 21**: standalone components, signals, zoneless change detec
 | **Paint-chip projects** | Each project is a paint-store colour chip that you can flip over. |
 | **Brush-stroke timeline** | The career journey is drawn as one long brush stroke while you scroll. |
 | **Celebrations** | Finishing a block shows a paint burst and a toast. Finishing the whole site triggers a bigger celebration. |
-| **Postcards** | Turns what you painted into a 1600 × 1000 postcard with your own message, then downloads, shares or sends it to you. Approved postcards hang on a rack on the Contact page. |
+| **Postcards** | Turns what you painted into a two-sided postcard that flips over: the painting on the front; the visitor's note (up to 140 characters on 6 lines), a stamp in a colour they pick and your address on the back, on light or dark paper. They can download both sides, share them, or send the card to you. Approved postcards hang on a rack on the Contact page, where each one opens full size and turns over. |
 | **Community wall** | Visitors paint one shape of a shared city mural, or throw one splash of paint, sign it, and can edit it later. Everyone sees the same wall. |
 | **Colouring studio** | Free colouring pages that you can save as images. |
 | **Undo / redo and saving** | Every fill can be undone and redone, and progress is kept in the visitor's browser. |
@@ -125,8 +125,13 @@ Without the backend you can still click **Download content.json** and replace `p
 | `R` | Roller (paint the whole screen) |
 | `E` | Eraser |
 | `M` | Shuffle to a new palette mood |
-| `Ctrl + Z` / `Ctrl + Shift + Z` | Undo / redo |
+| `Ctrl + Z` / `Ctrl + Shift + Z` (or `Ctrl + Y`) | Undo / redo |
+| `Enter` / `Space` on a focused shape | Fill it (or erase it with the eraser) |
 | `Ctrl + Alt + E` | Open the content editor |
+| `Esc` | Close the menu, the editor, the postcard or the postcard viewer |
+| `←` / `→` | Previous / next card in the postcard viewer |
+
+Paint shortcuts are paused while you type in a box or while the postcard / postcard viewer is open.
 
 All of these tools are also in the **paint dock** at the bottom of the screen, along with the postcard button. The theme and Mono / Colour toggles are in the navbar.
 
@@ -180,15 +185,16 @@ The backend runs on **Cloudflare**: the site is served by **Cloudflare Pages**, 
 |---|---|---|
 | Mural shapes | `mural_claims` table | The database allows **one painter per shape** |
 | Splashes | `splashes` table | One per visitor (remembered in their browser) |
-| Postcards | `postcards` table (image included) | Stay **pending** until you approve them in `/admin` |
+| Postcards | `postcards` table (both sides' images included) | Stay **pending** until you approve them in `/admin` |
 | Site content | `content` table | Set from `/admin → Content` |
 
 **Safety built in**
 
 - Each mark gets a secret **edit token** that only the painter's browser keeps (the database stores a hash), so only they can edit it.
 - **Rate limits** per visitor: 12 wall writes and 3 postcards per hour. Visitor IPs are only stored as salted hashes.
+- **One mark per visitor:** each browser can paint one mural shape and throw one splash. The server also caps each wall at 3 marks per network, so clearing the browser doesn't allow more, while people sharing one Wi-Fi can still each leave theirs. If you remove a mark in `/admin`, that visitor can paint again.
 - Every name, city and message is cleaned and length-limited on the server, using the same limits as the site (`src/app/core/wall-limits.ts`).
-- Postcard images are checked to be real JPEG/PNG/WebP files and capped at 1.2 MB.
+- Postcard images are checked to be real JPEG/PNG/WebP files and capped at 800 KB per side.
 - Writes are only accepted from the site's own origin. Admin routes need the `ADMIN_KEY` secret.
 
 ### API
@@ -199,7 +205,7 @@ The backend runs on **Cloudflare**: the site is served by **Cloudflare Pages**, 
 | `GET /api/content` | Published content |
 | `GET` / `POST /api/mural`, `PATCH /api/mural/:id` | List, paint and edit mural shapes |
 | `GET` / `POST /api/splashes`, `PATCH /api/splashes/:id` | List, throw and edit splashes |
-| `GET` / `POST /api/postcards`, `GET /api/postcards/:id/image` | The rack, sending a postcard, approved images |
+| `GET` / `POST /api/postcards`, `GET /api/postcards/:id/image` and `/back` | The rack, sending a postcard, the front and back of approved cards |
 | `/api/admin/…` | Postcard review, removing wall marks, publishing content (needs the admin key) |
 
 ### Running it locally

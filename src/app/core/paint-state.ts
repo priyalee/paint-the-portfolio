@@ -29,6 +29,8 @@ interface Persisted {
   theme?: Theme;
   palette?: number;
   fills?: Record<string, number>;
+  /** 2 = skill/project/journey paint uses stable keys (core/paint-keys), not list positions. */
+  regions?: number;
 }
 
 const STORAGE_KEY = 'ink-pigment:v1';
@@ -60,6 +62,7 @@ export class PaintState {
   readonly activeColor = computed(() => this.palette().colors[this.slot()]);
 
   private readonly fills = signal<Record<string, number>>(sanitizeFills(this.saved.fills));
+  private readonly regionsVersion = signal(this.saved.regions ?? 1);
   private readonly undoStack = signal<Change[]>([]);
   private readonly redoStack = signal<Change[]>([]);
   readonly canUndo = computed(() => this.undoStack().length > 0);
@@ -84,6 +87,7 @@ export class PaintState {
         theme: this.theme(),
         palette: this.paletteIndex(),
         fills: this.fills(),
+        regions: this.regionsVersion(),
       }),
     );
   }
@@ -136,6 +140,26 @@ export class PaintState {
   }
 
   /** Clears every region in `scope` whose id starts with `prefix`. Undoable. */
+  /**
+   * Moves paint saved under old position-based ids (skill-0-1-paint, work-2…)
+   * to the stable ids from core/paint-keys. Runs once per browser.
+   */
+  migrateRegions(map: Record<string, string>): void {
+    if (this.regionsVersion() >= 2) return;
+    this.fills.update((f) => {
+      const next = { ...f };
+      for (const [oldId, newId] of Object.entries(map)) {
+        const from = key('site', oldId);
+        if (!(from in next)) continue;
+        const to = key('site', newId);
+        if (!(to in next)) next[to] = next[from];
+        delete next[from];
+      }
+      return next;
+    });
+    this.regionsVersion.set(2);
+  }
+
   reset(scope: PaintScope, prefix = ''): void {
     const start = key(scope, prefix);
     const change: Change = Object.entries(this.fills())

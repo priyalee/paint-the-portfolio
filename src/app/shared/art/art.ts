@@ -111,24 +111,151 @@ export const PORTRAIT: Artwork = {
 
 // ---------------------------------------------------------------- envelope
 
-export const ENVELOPE: Artwork = {
-  id: 'envelope',
-  title: 'Envelope',
-  viewBox: '0 0 320 230',
-  shapes: [
-    { id: 'letter', label: 'Letter', d: 'M52 12h216v130h-216Z', slot: null },
-    {
-      id: 'heart',
-      label: 'Heart',
-      d: 'M160 84C136 66 134 40 160 50C186 40 184 66 160 84Z',
-      slot: 0,
-    },
-    { id: 'body', label: 'Envelope back', d: 'M20 60h280v160h-280Z', slot: 2 },
-    { id: 'flap-l', label: 'Left flap', d: 'M20 60L150 150L20 220Z', slot: 3 },
-    { id: 'flap-r', label: 'Right flap', d: 'M300 60L170 150L300 220Z', slot: 3 },
-    { id: 'pocket', label: 'Front pocket', d: 'M20 220L160 128L300 220Z', slot: 4 },
-  ],
-};
+/**
+ * A vintage airmail envelope (front): diagonal airmail stripes round the
+ * edge (two alternating sets, so one click paints every other stripe), a
+ * perforated stamp with a little landscape, a postmark with cancellation
+ * waves, an "air mail" label with a plane, address lines and a wax seal.
+ */
+export const ENVELOPE: Artwork = envelope();
+
+function envelope(): Artwork {
+  const [x0, y0, x1, y1] = [10, 20, 350, 232];
+  const band = 14;
+  return {
+    id: 'envelope',
+    title: 'Airmail envelope',
+    viewBox: '0 0 360 250',
+    shapes: [
+      { id: 'body', label: 'Envelope', d: rect(x0 + band, y0 + band, x1 - band, y1 - band), slot: null },
+      ...airmailStripes(x0, y0, x1, y1, band),
+      { id: 'edge', label: 'Edge', d: rect(x0, y0, x1, y1), slot: 'line' },
+      { id: 'edge-in', label: 'Inner edge', d: rect(x0 + band, y0 + band, x1 - band, y1 - band), slot: 'line' },
+
+      // Air mail label: a plane and two lines of "lettering".
+      { id: 'label', label: 'Air mail label', d: 'M40 48h86a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4h-86a4 4 0 0 1-4-4v-20a4 4 0 0 1 4-4Z', slot: 4 },
+      {
+        id: 'plane',
+        label: 'Plane',
+        d: 'M44 60.5H57L51 52H55L64 60.5H69Q72 62 69 63.5H64L55 72H51L57 63.5H44L42 67H40L41.5 62L40 57H42Z',
+        slot: 5,
+      },
+      { id: 'label-text', label: 'Lettering', d: 'M78 57H120M78 66H112', slot: 'line' },
+
+      // Stamp: perforated edge, framed picture of a sun over hills.
+      { id: 'stamp', label: 'Stamp', d: perforated(266, 44, 58, 70, 3), slot: 2 },
+      { id: 'stamp-picture', label: 'Stamp picture', d: rect(273, 51, 317, 107), slot: null },
+      { id: 'stamp-sun', label: 'Stamp sun', d: circle(306, 63, 6), slot: 0 },
+      { id: 'stamp-hills', label: 'Stamp mountains', d: 'M273 107V97L285 74L293 87L300 79L317 100V107Z', slot: 3 },
+
+      // Postmark and wavy cancellation lines (decoration only).
+      { id: 'postmark', label: 'Postmark', d: `${circle(252, 104, 22)}${circle(252, 104, 16)}`, slot: 'line' },
+      {
+        id: 'cancel',
+        label: 'Cancellation',
+        d: 'M164 94q8 -6 16 0t16 0t16 0M164 104q8 -6 16 0t16 0t16 0M164 114q8 -6 16 0t16 0t16 0',
+        slot: 'line',
+      },
+
+      // Address lines.
+      { id: 'address', label: 'Address', d: 'M150 152H318M150 174H318M150 196H286', slot: 'line' },
+
+      // Wax seal with a heart.
+      { id: 'seal', label: 'Wax seal', d: scalloped(76, 178, 28, 16), slot: 0 },
+      { id: 'seal-ring', label: 'Seal rim', d: circle(76, 178, 20), slot: 'line' },
+      { id: 'heart', label: 'Heart', d: 'M76 190C63 181 61 166 76 171C91 166 89 181 76 190Z', slot: 1 },
+    ],
+  };
+}
+
+function rect(xa: number, ya: number, xb: number, yb: number): string {
+  return `M${xa} ${ya}H${xb}V${yb}H${xa}Z`;
+}
+
+/**
+ * The airmail border as two shapes: every other diagonal stripe in one,
+ * the rest in the other. Each stripe is a slab of the border band cut at 45°.
+ */
+function airmailStripes(x0: number, y0: number, x1: number, y1: number, band: number): ArtShape[] {
+  type P = [number, number];
+  const parts: [number, number, number, number][] = [
+    [x0, y0, x1, y0 + band],
+    [x0, y1 - band, x1, y1],
+    [x0, y0 + band, x0 + band, y1 - band],
+    [x1 - band, y0 + band, x1, y1 - band],
+  ];
+  const half = 24;
+  const sets = ['', ''];
+  const clip = (poly: P[], keep: (p: P) => number): P[] => {
+    const out: P[] = [];
+    poly.forEach((a, i) => {
+      const b = poly[(i + 1) % poly.length];
+      const [fa, fb] = [keep(a), keep(b)];
+      if (fa >= 0) out.push(a);
+      if (fa >= 0 !== fb >= 0) {
+        const t = fa / (fa - fb);
+        out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      }
+    });
+    return out;
+  };
+  for (let k = Math.floor((x0 + y0) / half); k * half < x1 + y1; k++) {
+    const [lo, hi] = [k * half, (k + 1) * half];
+    for (const [ax, ay, bx, by] of parts) {
+      let poly: P[] = [[ax, ay], [bx, ay], [bx, by], [ax, by]];
+      poly = clip(poly, ([x, y]) => x + y - lo);
+      poly = clip(poly, ([x, y]) => hi - (x + y));
+      if (poly.length < 3) continue;
+      const area = Math.abs(poly.reduce((sum, [x, y], i) => {
+        const [nx, ny] = poly[(i + 1) % poly.length];
+        return sum + x * ny - nx * y;
+      }, 0)) / 2;
+      if (area < 1) continue;
+      sets[((k % 2) + 2) % 2] += `M${poly.map(([x, y]) => `${+x.toFixed(2)} ${+y.toFixed(2)}`).join('L')}Z`;
+    }
+  }
+  return [
+    { id: 'stripes-a', label: 'Airmail stripes', d: sets[0], slot: 0 },
+    { id: 'stripes-b', label: 'Airmail stripes (in between)', d: sets[1], slot: 5 },
+  ];
+}
+
+/** A stamp outline with round perforation bites along every edge. */
+function perforated(x: number, y: number, w: number, h: number, r: number): string {
+  const n = (len: number) => Math.max(2, Math.round(len / (r * 3.2)));
+  const edge = (fx: number, fy: number, dx: number, dy: number, len: number) => {
+    const count = n(len);
+    const step = len / count;
+    let d = '';
+    for (let i = 0; i < count; i++) {
+      const mid = (i + 0.5) * step;
+      const [ax, ay] = [fx + dx * (mid - r), fy + dy * (mid - r)];
+      const [bx, by] = [fx + dx * (mid + r), fy + dy * (mid + r)];
+      d += `L${+ax.toFixed(2)} ${+ay.toFixed(2)}A${r} ${r} 0 0 0 ${+bx.toFixed(2)} ${+by.toFixed(2)}`;
+    }
+    return d + `L${+(fx + dx * len).toFixed(2)} ${+(fy + dy * len).toFixed(2)}`;
+  };
+  return (
+    `M${x} ${y}` +
+    edge(x, y, 1, 0, w) +
+    edge(x + w, y, 0, 1, h) +
+    edge(x + w, y + h, -1, 0, w) +
+    edge(x, y + h, 0, -1, h) +
+    'Z'
+  );
+}
+
+/** A wax-seal blob: a circle with soft scalloped bumps. */
+function scalloped(cx: number, cy: number, r: number, bumps: number): string {
+  const pts: string[] = [];
+  const steps = bumps * 6;
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    const rr = r + 2.4 * Math.cos(a * bumps);
+    pts.push(`${+(cx + Math.cos(a) * rr).toFixed(2)} ${+(cy + Math.sin(a) * rr).toFixed(2)}`);
+  }
+  return `M${pts.join('L')}Z`;
+}
 
 // ------------------------------------------------------------ studio pages
 

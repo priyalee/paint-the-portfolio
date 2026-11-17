@@ -14,7 +14,8 @@ import {
 import { routes } from './app.routes';
 import { ApiStatus } from '@core/api';
 import { ContentStore } from '@core/content-store';
-import { reducedMotion } from '@core/paint-state';
+import { PaintState, reducedMotion } from '@core/paint-state';
+import { legacyRegionMap } from '@core/paint-keys';
 import { PortfolioTitleStrategy } from '@core/title-strategy';
 
 export const appConfig: ApplicationConfig = {
@@ -25,7 +26,12 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       const apiStatus = inject(ApiStatus);
       const content = inject(ContentStore);
-      return apiStatus.check().then(() => content.load());
+      const paint = inject(PaintState);
+      return apiStatus
+        .check()
+        .then(() => content.load())
+        // Paint used to be saved by list position; move it to stable keys once.
+        .then(() => paint.migrateRegions(legacyRegionMap(content.content())));
     }),
     provideRouter(
       routes,

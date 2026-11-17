@@ -7,6 +7,14 @@ export function readFlag(key: string): string | null {
   }
 }
 
+export function clearFlag(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function writeFlag(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);

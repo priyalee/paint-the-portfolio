@@ -19,7 +19,7 @@ import { MuralCanvas } from '../mural-canvas/mural-canvas';
 import { RecentArtists } from '../recent-artists/recent-artists';
 import { SignForm, Signature } from '../sign-form/sign-form';
 import { WallPalette } from '../wall-palette/wall-palette';
-import { readFlag, writeFlag } from '../signed-flag';
+import { clearFlag, readFlag, writeFlag } from '../signed-flag';
 
 const SIGNED_KEY = 'ink-pigment:mural-signed';
 
@@ -78,7 +78,17 @@ export class MuralBoard {
   }
 
   private async load(): Promise<void> {
-    this.claims.set(await this.backend.list());
+    const claims = await this.backend.list();
+    if (!claims) return; // couldn't load: keep what we have, and trust the saved flag
+    this.claims.set(claims);
+    // The browser remembers what it signed. If that shape is gone (removed in
+    // /admin) or belongs to someone else now, forget it so the visitor can paint again.
+    const region = this.signedRegion();
+    if (region && !claims.some((c) => c.regionId === region && this.backend.isMine(c.id))) {
+      clearFlag(SIGNED_KEY);
+      this.signedRegion.set(null);
+      this.editing.set(false);
+    }
   }
 
   protected onPick(shape: ArtShape): void {

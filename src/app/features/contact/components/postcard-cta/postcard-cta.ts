@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { PaintState } from '@core/paint-state';
 import { Postcard } from '@core/postcard';
 import { Icon } from '@shared/ui/icon';
 
@@ -13,9 +12,8 @@ import { Icon } from '@shared/ui/icon';
       <div>
         <h3>Make a postcard</h3>
         <p>
-          Turn what you painted into a postcard in the
-          <strong>{{ state.palette().name }}</strong> palette. Add a note, then download it — or
-          share it from your phone.
+          Turn what you painted into a two-sided postcard. Write a note on the back, pick a stamp and
+          paper, then download it, share it, or send it to {{ postcard.ownerName() || 'the studio' }}.
         </p>
       </div>
       <button type="button" class="btn" (click)="postcard.open()" [disabled]="postcard.busy()">
@@ -46,6 +44,5 @@ import { Icon } from '@shared/ui/icon';
   `,
 })
 export class PostcardCta {
-  protected readonly state = inject(PaintState);
   protected readonly postcard = inject(Postcard);
 }

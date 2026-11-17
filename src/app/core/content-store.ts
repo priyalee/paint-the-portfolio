@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiStatus, api } from '@core/api';
+import { KEY_PATTERN, withKeys } from '@core/paint-keys';
 import {
   ExperienceItem,
   PORTFOLIO,
@@ -150,6 +151,11 @@ function strings(v: unknown, max = 24, len = 600): string[] | null {
     .map((s) => s.trim().slice(0, len));
 }
 
+/** A saved paint key, if it is a valid one (core/paint-keys). */
+function keyOf(value: unknown): string | undefined {
+  return typeof value === 'string' && KEY_PATTERN.test(value) ? value : undefined;
+}
+
 export function normalizePortfolio(input: unknown, base: Portfolio): Portfolio {
   const o = isObj(input) ? input : {};
   const name = str(o['name'], base.name, 60);
@@ -167,21 +173,31 @@ export function normalizePortfolio(input: unknown, base: Portfolio): Portfolio {
     facts: list(o['facts'], base.facts, (f) =>
       isObj(f) ? { label: str(f['label'], '', 40), value: str(f['value'], '', 80) } : null,
     ),
-    skills: list(o['skills'], base.skills, (g): SkillGroup | null =>
-      isObj(g)
-        ? {
-            name: str(g['name'], 'Skills', 40),
-            items: list(g['items'], [], (s) =>
-              isObj(s)
-                ? { name: str(s['name'], '', 40), level: int(s['level'], 50, 0, 100) }
-                : null,
-            ),
-          }
-        : null,
+    skills: withKeys(
+      list(o['skills'], base.skills, (g): SkillGroup | null =>
+        isObj(g)
+          ? {
+              key: keyOf(g['key']),
+              name: str(g['name'], 'Skills', 40),
+              items: withKeys(
+                list(g['items'], [], (s) =>
+                  isObj(s)
+                    ? { key: keyOf(s['key']), name: str(s['name'], '', 40), level: int(s['level'], 50, 0, 100) }
+                    : null,
+                ),
+                (s) => s.name,
+                'skill',
+              ),
+            }
+          : null,
+      ),
+      (g) => g.name,
+      'group',
     ),
-    projects: list(o['projects'], base.projects, (p, i): Project | null =>
+    projects: withKeys(list(o['projects'], base.projects, (p, i): Project | null =>
       isObj(p)
         ? {
+            key: keyOf(p['key']),
             title: str(p['title'], 'Untitled project', 80),
             year: str(p['year'], '', 20),
             tagline: str(p['tagline'], '', 140),
@@ -195,10 +211,11 @@ export function normalizePortfolio(input: unknown, base: Portfolio): Portfolio {
             slot: int(p['slot'], i % 6, 0, 5),
           }
         : null,
-    ),
-    experience: list(o['experience'], base.experience, (e): ExperienceItem | null =>
+    ), (p) => p.title, 'project'),
+    experience: withKeys(list(o['experience'], base.experience, (e): ExperienceItem | null =>
       isObj(e)
         ? {
+            key: keyOf(e['key']),
             role: str(e['role'], '', 80),
             org: str(e['org'], '', 80),
             period: str(e['period'], '', 40),
@@ -206,7 +223,7 @@ export function normalizePortfolio(input: unknown, base: Portfolio): Portfolio {
             highlights: strings(e['highlights'], 8, 200) ?? [],
           }
         : null,
-    ),
+    ), (e) => `${e.role} ${e.org}`, 'entry'),
     socials: list(o['socials'], base.socials, (s): SocialLink | null => {
       if (!isObj(s)) return null;
       const url = safeUrl(s['url']);

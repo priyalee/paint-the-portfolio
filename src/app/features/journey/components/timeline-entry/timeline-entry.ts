@@ -14,7 +14,7 @@ import { Paintable } from '@shared/paint/paintable.directive';
       <!-- id must match siteRegionIds() in core/chapters.ts -->
       <path
         d="M22 6c9 0 16 6 16 16s-7 16-16 16S6 31 6 22 13 6 22 6Z"
-        [appPaintable]="'journey-' + index()"
+        [appPaintable]="regionId()"
         [trueColor]="index() % 6"
         [label]="e.org + ' marker'"
       />
@@ -94,4 +94,6 @@ import { Paintable } from '@shared/paint/paintable.directive';
 export class TimelineEntry {
   readonly item = input.required<ExperienceItem>();
   readonly index = input.required<number>();
+  /** Paint-region id from core/paint-keys; must match siteRegionIds() in core/chapters.ts */
+  readonly regionId = input.required<string>();
 }

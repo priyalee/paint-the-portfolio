@@ -46,6 +46,26 @@ export function cleanText(value: unknown, max: number): string {
     .slice(0, max);
 }
 
+/**
+ * Like cleanText, but keeps line breaks: at most `maxLines` lines, spaces
+ * tidied inside each line, and no empty lines at the start or end.
+ */
+export function cleanMultiline(value: unknown, max: number, maxLines: number): string {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => cleanText(line, max))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .split('\n')
+    .slice(0, maxLines)
+    .join('\n')
+    .slice(0, max)
+    .trim();
+}
+
 export async function sha256(text: string): Promise<string> {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');

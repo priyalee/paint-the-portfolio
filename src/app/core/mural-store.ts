@@ -23,7 +23,10 @@ export type ClaimResult = { ok: true } | { ok: false; reason: string };
  * kept in this browser only, so the wall still works while developing.
  */
 export interface MuralBackend {
-  list(): Promise<MuralClaim[]>;
+  /** Every claim, or null when the wall couldn't be loaded (e.g. offline). */
+  list(): Promise<MuralClaim[] | null>;
+  /** Whether this browser made the claim (and can still edit it). */
+  isMine(claimId: string): boolean;
   claim(claim: MuralClaim): Promise<ClaimResult>;
   /** Changes colour / name / place of an existing claim (same id and region). */
   update(claim: MuralClaim): Promise<ClaimResult>;
@@ -56,6 +59,11 @@ export function isValidClaim(c: unknown): c is MuralClaim {
 class LocalMuralBackend implements MuralBackend {
   private readonly key = 'ink-pigment:mural';
 
+  /** Everything in this browser's own wall was made here. */
+  isMine(): boolean {
+    return true;
+  }
+
   async list(): Promise<MuralClaim[]> {
     try {
       const parsed: unknown = JSON.parse(localStorage.getItem(this.key) ?? '[]');
@@ -66,7 +74,7 @@ class LocalMuralBackend implements MuralBackend {
   }
 
   async claim(claim: MuralClaim): Promise<ClaimResult> {
-    const all = await this.list();
+    const all = (await this.list()) ?? [];
     if (all.some((c) => c.regionId === claim.regionId)) {
       return { ok: false, reason: 'Someone just painted that shape — pick another one.' };
     }
@@ -80,7 +88,7 @@ class LocalMuralBackend implements MuralBackend {
 
   async update(claim: MuralClaim): Promise<ClaimResult> {
     if (!isValidClaim(claim)) return { ok: false, reason: 'Those changes could not be saved.' };
-    const all = await this.list();
+    const all = (await this.list()) ?? [];
     const i = all.findIndex((c) => c.id === claim.id && c.regionId === claim.regionId);
     if (i < 0) return { ok: false, reason: 'Your shape could not be found on the mural.' };
     try {
@@ -95,9 +103,14 @@ class LocalMuralBackend implements MuralBackend {
 
 /** The shared mural, stored by the site's backend (/api/mural). */
 class HttpMuralBackend implements MuralBackend {
-  async list(): Promise<MuralClaim[]> {
+  async list(): Promise<MuralClaim[] | null> {
     const res = await api<MuralClaim[]>('/mural');
-    return res.ok ? res.data.filter(isValidClaim) : [];
+    return res.ok ? res.data.filter(isValidClaim) : null;
+  }
+
+  /** Only the browser holding the claim's edit token painted it. */
+  isMine(claimId: string): boolean {
+    return !!readEditToken(claimId);
   }
 
   async claim(claim: MuralClaim): Promise<ClaimResult> {

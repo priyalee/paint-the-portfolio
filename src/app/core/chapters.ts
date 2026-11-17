@@ -1,6 +1,7 @@
 import { ENVELOPE, PORTRAIT, STUDIO_ART } from '@shared/art/art';
 import { Portfolio } from '@data/portfolio.data';
 import { PaintScope } from '@core/paint-state';
+import { journeyRegionId, projectRegionId, siteKeys, skillJarId } from '@core/paint-keys';
 
 /** Every independent page of the site, in reading order. */
 export interface Chapter {
@@ -29,15 +30,16 @@ export const CHAPTERS: Chapter[] = [
  * Must mirror the ids used in the section templates.
  */
 export function siteRegionIds(content: Portfolio): string[] {
+  const keys = siteKeys(content);
   const art = (prefix: string, shapes: { id: string; slot: unknown }[]) =>
     shapes.filter((s) => s.slot !== 'line').map((s) => prefix + s.id);
   return [
     ...art('about-', PORTRAIT.shapes),
-    ...content.skills.flatMap((g, gi) =>
-      g.items.flatMap((_, i) => [`skill-${gi}-${i}-paint`, `skill-${gi}-${i}-lid`]),
+    ...keys.skills.flatMap((g) =>
+      g.items.flatMap((s) => [`${skillJarId(g.key, s)}-paint`, `${skillJarId(g.key, s)}-lid`]),
     ),
-    ...content.projects.map((_, i) => `work-${i}`),
-    ...content.experience.map((_, i) => `journey-${i}`),
+    ...keys.projects.map(projectRegionId),
+    ...keys.journey.map(journeyRegionId),
     ...art('contact-', ENVELOPE.shapes),
   ];
 }

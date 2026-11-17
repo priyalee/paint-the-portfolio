@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { DOCUMENT, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { PaintState } from '@core/paint-state';
 import { Postcard } from '@core/postcard';
 import { Icon } from '@shared/ui/icon';
@@ -22,6 +22,7 @@ import { Icon } from '@shared/ui/icon';
 })
 export class PaintDock {
   protected readonly state = inject(PaintState);
+  private readonly doc = inject(DOCUMENT);
   protected readonly postcard = inject(Postcard);
   protected readonly collapsed = signal(false);
   protected readonly moodFlash = signal(false);
@@ -42,7 +43,7 @@ export class PaintDock {
     if (
       !target ||
       target.closest(
-        'a, button, input, textarea, select, label, canvas, dialog, .paintable, app-paint-dock, app-content-editor, app-celebration-layer, app-navbar, app-splash-canvas, app-mural-canvas',
+        'a, button, input, textarea, select, label, canvas, svg, dialog, .paintable, app-brush-reveal, app-paint-dock, app-content-editor, app-celebration-layer, app-navbar, app-splash-canvas, app-mural-canvas',
       )
     ) {
       return;
@@ -65,7 +66,9 @@ export class PaintDock {
 
   protected onKey(e: KeyboardEvent): void {
     const target = e.target as HTMLElement | null;
-    if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    // Paint keys belong to the page: leave them alone while a postcard or the rack viewer is open.
+    if (this.doc.querySelector('dialog[open]')) return;
     const k = e.key.toLowerCase();
     if ((e.ctrlKey || e.metaKey) && k === 'z') {
       e.preventDefault();

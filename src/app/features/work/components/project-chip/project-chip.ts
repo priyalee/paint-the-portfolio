@@ -17,11 +17,11 @@ import { Icon } from '@shared/ui/icon';
 export class ProjectChip {
   readonly project = input.required<Project>();
   readonly index = input.required<number>();
+  /** Paint-region id from core/paint-keys; must match siteRegionIds() in core/chapters.ts */
+  readonly regionId = input.required<string>();
 
   private readonly state = inject(PaintState);
   protected readonly flipped = signal(false);
-  /** Must match siteRegionIds() in core/chapters.ts */
-  protected readonly regionId = computed(() => `work-${this.index()}`);
 
   /** The chip's "paint name": whatever pigment currently shows on it. */
   protected readonly colourName = computed(() => {

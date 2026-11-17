@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { FlipCard } from '@shared/ui/flip-card';
 import { Icon } from '@shared/ui/icon';
 import { AdminSession } from '../admin-session';
 import { ConfirmButton } from './confirm-button';
@@ -13,14 +14,17 @@ interface QueueCard {
   status: Status;
   createdAt: number;
   imageUrl: string;
-  /** Object URL of the privately loaded image. */
+  /** The written side; null for cards sent before postcards had two sides. */
+  backUrl: string | null;
+  /** Object URLs of the privately loaded sides. */
   src?: string | null;
+  backSrc?: string | null;
 }
 
-/** Review postcards: approve them onto the public rack, hide or delete them. */
+/** Review postcards (click a card to read its back): approve them onto the public rack, hide or delete them. */
 @Component({
   selector: 'app-postcard-queue',
-  imports: [DatePipe, Icon, ConfirmButton],
+  imports: [DatePipe, FlipCard, Icon, ConfirmButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="filters" role="tablist" aria-label="Postcard status">
@@ -44,11 +48,11 @@ interface QueueCard {
         @for (c of cards(); track c.id) {
           <li class="card">
             @if (c.src) {
-              <img [src]="c.src" [alt]="'Postcard from ' + c.from" />
+              <app-flip-card [front]="c.src" [back]="c.backSrc ?? null" [alt]="'Postcard from ' + c.from" />
             } @else {
               <div class="img-missing">Image unavailable</div>
             }
-            <p class="msg">“{{ c.message || 'Wish you were here!' }}”</p>
+            <p class="msg" style="white-space: pre-line">“{{ c.message || 'Wish you were here!' }}”</p>
             <p class="muted">— {{ c.from }} · {{ c.createdAt | date: 'medium' }}</p>
             <div class="actions">
               @if (c.status !== 'approved') {
@@ -110,9 +114,15 @@ export class PostcardQueue {
       this.cards.set([]);
     } else {
       const withImages = await Promise.all(
-        res.data.map(async (c) => ({ ...c, src: await this.session.image(c.imageUrl) })),
+        res.data.map(async (c) => {
+          const [src, backSrc] = await Promise.all([
+            this.session.image(c.imageUrl),
+            c.backUrl ? this.session.image(c.backUrl) : null,
+          ]);
+          return { ...c, src, backSrc };
+        }),
       );
-      this.urls = withImages.map((c) => c.src).filter((u): u is string => !!u);
+      this.urls = withImages.flatMap((c) => [c.src, c.backSrc]).filter((u): u is string => !!u);
       this.cards.set(withImages);
     }
     this.loading.set(false);

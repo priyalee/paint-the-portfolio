@@ -28,7 +28,10 @@ export type SplashResult = { ok: true } | { ok: false; reason: string };
  * only, the same way as MURAL_BACKEND.
  */
 export interface SplashBackend {
-  list(): Promise<Splash[]>;
+  /** Every splash, or null when the wall couldn't be loaded (e.g. offline). */
+  list(): Promise<Splash[] | null>;
+  /** Whether this browser threw the splash (and can still edit it). */
+  isMine(splashId: string): boolean;
   add(splash: Splash): Promise<SplashResult>;
   /** Changes colour / name / place of an existing splash (same id). */
   update(splash: Splash): Promise<SplashResult>;
@@ -67,6 +70,11 @@ export function isValidSplash(s: unknown): s is Splash {
 class LocalSplashBackend implements SplashBackend {
   private readonly key = 'ink-pigment:splashes';
 
+  /** Everything in this browser's own wall was thrown here. */
+  isMine(): boolean {
+    return true;
+  }
+
   async list(): Promise<Splash[]> {
     try {
       const parsed: unknown = JSON.parse(localStorage.getItem(this.key) ?? '[]');
@@ -79,7 +87,7 @@ class LocalSplashBackend implements SplashBackend {
   async add(splash: Splash): Promise<SplashResult> {
     if (!isValidSplash(splash)) return { ok: false, reason: 'That splash missed the wall — try again.' };
     try {
-      const all = await this.list();
+      const all = (await this.list()) ?? [];
       localStorage.setItem(this.key, JSON.stringify([...all, splash]));
       return { ok: true };
     } catch {
@@ -89,7 +97,7 @@ class LocalSplashBackend implements SplashBackend {
 
   async update(splash: Splash): Promise<SplashResult> {
     if (!isValidSplash(splash)) return { ok: false, reason: 'Those changes could not be saved.' };
-    const all = await this.list();
+    const all = (await this.list()) ?? [];
     const i = all.findIndex((s) => s.id === splash.id);
     if (i < 0) return { ok: false, reason: 'Your splash could not be found on the wall.' };
     try {
@@ -104,9 +112,14 @@ class LocalSplashBackend implements SplashBackend {
 
 /** The shared splash wall, stored by the site's backend (/api/splashes). */
 class HttpSplashBackend implements SplashBackend {
-  async list(): Promise<Splash[]> {
+  async list(): Promise<Splash[] | null> {
     const res = await api<Splash[]>('/splashes');
-    return res.ok ? res.data.filter(isValidSplash) : [];
+    return res.ok ? res.data.filter(isValidSplash) : null;
+  }
+
+  /** Only the browser holding the splash's edit token threw it. */
+  isMine(splashId: string): boolean {
+    return !!readEditToken(splashId);
   }
 
   async add(splash: Splash): Promise<SplashResult> {

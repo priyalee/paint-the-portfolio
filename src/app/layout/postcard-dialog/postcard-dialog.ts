@@ -1,22 +1,15 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  effect,
-  inject,
-  viewChild,
-} from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { MAX_FROM, MAX_MESSAGE, Postcard } from '@core/postcard';
+import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, viewChild } from '@angular/core';
+import { CardPaper, DEFAULT_MESSAGE, MAX_FROM, MAX_MESSAGE, MAX_MESSAGE_LINES, Postcard } from '@core/postcard';
+import { FlipCard } from '@shared/ui/flip-card';
 import { Icon } from '@shared/ui/icon';
 
 /**
- * Postcard preview: shows the card, lets the visitor write a short message
- * and sign it, then download it (or share it from a phone).
+ * Postcard preview: a two-sided card the visitor can turn over, write on,
+ * sign, and style (paper and stamp colour), then download, share or send.
  */
 @Component({
   selector: 'app-postcard-dialog',
-  imports: [FormsModule, Icon],
+  imports: [FlipCard, Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <dialog #dialog aria-labelledby="postcard-title" (close)="postcard.close()" (click)="onBackdrop($event)">
@@ -29,47 +22,105 @@ import { Icon } from '@shared/ui/icon';
         </header>
 
         <div class="preview">
-          @if (postcard.previewUrl(); as url) {
-            <img [src]="url" alt="Preview of your postcard" />
-          } @else {
-            <p>Printing…</p>
-          }
+          <app-flip-card
+            [front]="postcard.frontUrl()"
+            [back]="postcard.backUrl()"
+            [side]="postcard.side()"
+            (sideChange)="postcard.side.set($event)"
+            alt="Your postcard"
+          />
+          <div class="sides" role="group" aria-label="Side shown">
+            <button type="button" [attr.aria-pressed]="postcard.side() === 'front'" (click)="postcard.side.set('front')">
+              Front
+            </button>
+            <button type="button" [attr.aria-pressed]="postcard.side() === 'back'" (click)="postcard.side.set('back')">
+              Back
+            </button>
+            <span class="tip">Click the card to turn it over</span>
+          </div>
         </div>
 
         <div class="fields">
-          <label>
-            <span>Message</span>
-            <input
-              type="text"
-              [maxlength]="maxMessage"
-              placeholder="Wish you were here!"
-              [ngModel]="postcard.message()"
-              (ngModelChange)="postcard.message.set($event); redraw()"
-            />
+          <label class="message">
+            <span class="label">Message</span>
+            <textarea
+              #msg
+              rows="3"
+              [maxLength]="maxMessage"
+              [placeholder]="defaultMessage"
+              [value]="postcard.message()"
+              (focus)="postcard.side.set('back')"
+              (input)="onMessage(msg)"
+            ></textarea>
+            <span class="count" [class.near]="remaining() <= 15" aria-live="polite">
+              {{ remaining() }} characters left · up to {{ maxLines }} lines
+            </span>
           </label>
+
           <label>
-            <span>From</span>
+            <span class="label">From</span>
             <input
+              #from
               type="text"
-              [maxlength]="maxFrom"
+              [maxLength]="maxFrom"
               placeholder="a visitor"
               autocomplete="nickname"
-              [ngModel]="postcard.from()"
-              (ngModelChange)="postcard.from.set($event); redraw()"
+              [value]="postcard.from()"
+              (focus)="postcard.side.set('back')"
+              (input)="postcard.from.set(from.value); redraw()"
             />
           </label>
+
+          <div class="choice">
+            <span class="label" id="paper-label">Paper</span>
+            <div class="toggle" role="radiogroup" aria-labelledby="paper-label">
+              @for (p of papers; track p.id) {
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="postcard.paper() === p.id"
+                  (click)="postcard.setPaper(p.id)"
+                >
+                  <span class="chip" [class]="p.id"></span>{{ p.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="choice stamps">
+            <span class="label" id="stamp-label">Stamp</span>
+            <div class="swatches" role="radiogroup" aria-labelledby="stamp-label">
+              @for (c of postcard.stampColours(); track c.hex) {
+                <button
+                  type="button"
+                  class="swatch"
+                  role="radio"
+                  [attr.aria-checked]="c.hex.toUpperCase() === postcard.stamp()"
+                  [attr.aria-label]="c.name"
+                  [title]="c.name"
+                  [style.background]="c.hex"
+                  (click)="postcard.setStamp(c.hex)"
+                ></button>
+              }
+              <label class="swatch custom" title="Any colour">
+                <app-icon name="palette" />
+                <span class="sr-only">Any colour</span>
+                <input #pick type="color" [value]="postcard.stamp()" (input)="postcard.setStamp(pick.value)" />
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="actions">
-          <button type="button" class="btn" (click)="postcard.download()" [disabled]="!postcard.previewUrl()">
-            <app-icon name="download" /> Download
+          <button type="button" class="btn" (click)="postcard.download()" [disabled]="!postcard.ready()">
+            <app-icon name="download" /> Download both sides
           </button>
           @if (postcard.canSend()) {
             <button
               type="button"
               class="btn btn-ghost"
               (click)="postcard.send()"
-              [disabled]="!postcard.previewUrl() || postcard.sending()"
+              [disabled]="!postcard.ready() || postcard.sending()"
             >
               <app-icon name="mail" />
               {{ postcard.sending() ? 'Sending…' : 'Send it to ' + (postcard.ownerName() || 'the studio') }}
@@ -86,7 +137,8 @@ import { Icon } from '@shared/ui/icon';
         }
         <p class="note">
           @if (postcard.canSend()) {
-            Download keeps it on your device. Sent postcards may appear on the postcard rack once approved.
+            Download keeps it on your device. A card you send is only seen by
+            {{ postcard.ownerName() || 'the owner' }} until it's approved for the postcard rack.
           } @else {
             Your postcard is saved to your device — nothing is sent anywhere.
           }
@@ -96,7 +148,7 @@ import { Icon } from '@shared/ui/icon';
   `,
   styles: `
     dialog {
-      width: min(760px, calc(100vw - 32px));
+      width: min(820px, calc(100vw - 32px));
       max-height: calc(100dvh - 32px);
       padding: 0;
       border: 2px solid var(--ink);
@@ -111,7 +163,7 @@ import { Icon } from '@shared/ui/icon';
     }
     .sheet {
       display: grid;
-      gap: 16px;
+      gap: 18px;
       padding: clamp(16px, 3vw, 24px);
     }
     header {
@@ -136,47 +188,151 @@ import { Icon } from '@shared/ui/icon';
     }
     .preview {
       display: grid;
-      place-items: center;
-      aspect-ratio: 16 / 10;
+      gap: 10px;
+    }
+    .sides {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .sides button,
+    .toggle button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 36px;
+      padding: 0 14px;
       border: 2px solid var(--ink);
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--paper);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
     }
-    .preview img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+    .sides button[aria-pressed='true'],
+    .toggle button[aria-checked='true'] {
+      background: var(--ink);
+      color: var(--paper);
     }
-    .preview p {
+    .tip {
+      margin-left: auto;
       color: var(--muted);
+      font-size: 0.85rem;
     }
     .fields {
       display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 16px;
+      align-items: start;
     }
-    label {
+    .message {
+      grid-column: 1 / -1;
+    }
+    label,
+    .choice {
       display: grid;
       gap: 6px;
     }
-    label span {
+    .label {
       font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted);
     }
-    input {
-      height: 46px;
-      padding: 0 14px;
+    input[type='text'],
+    textarea {
+      padding: 10px 14px;
       border: 2px solid var(--ink);
       border-radius: 12px;
       background: var(--paper);
       color: var(--ink);
       font: inherit;
       min-width: 0;
+    }
+    input[type='text'] {
+      height: 46px;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 92px;
+      line-height: 1.4;
+    }
+    .count {
+      justify-self: end;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .count.near {
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .toggle {
+      display: flex;
+      gap: 8px;
+    }
+    .chip {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #8a857a;
+      border-radius: 50%;
+    }
+    .chip.light {
+      background: #f6f2e9;
+    }
+    .chip.dark {
+      background: #141412;
+    }
+    .stamps {
+      grid-column: 1 / -1;
+    }
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .swatch {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .swatch[aria-checked='true'] {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+    }
+    .swatch:focus-visible {
+      outline: 3px solid var(--accent, var(--ink));
+      outline-offset: 3px;
+    }
+    .custom {
+      display: grid;
+      place-items: center;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 0.8rem;
+    }
+    .custom input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
     }
     .actions {
       display: flex;
@@ -200,13 +356,22 @@ import { Icon } from '@shared/ui/icon';
       .fields {
         grid-template-columns: 1fr;
       }
+      .tip {
+        display: none;
+      }
     }
   `,
 })
 export class PostcardDialog {
   protected readonly postcard = inject(Postcard);
   protected readonly maxMessage = MAX_MESSAGE;
+  protected readonly maxLines = MAX_MESSAGE_LINES;
   protected readonly maxFrom = MAX_FROM;
+  protected readonly defaultMessage = DEFAULT_MESSAGE;
+  protected readonly papers: { id: CardPaper; label: string }[] = [
+    { id: 'light', label: 'Light' },
+    { id: 'dark', label: 'Dark' },
+  ];
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private timer?: ReturnType<typeof setTimeout>;
 
@@ -219,10 +384,25 @@ export class PostcardDialog {
     });
   }
 
-  /** Redraws the card shortly after typing stops. */
+  protected remaining(): number {
+    return MAX_MESSAGE - this.postcard.message().length;
+  }
+
+  /** Applies the length and line limits, keeping the cursor where it was. */
+  protected onMessage(el: HTMLTextAreaElement): void {
+    const clean = this.postcard.setMessage(el.value);
+    if (clean !== el.value) {
+      const at = Math.min(el.selectionStart, clean.length);
+      el.value = clean;
+      el.setSelectionRange(at, at);
+    }
+    this.redraw();
+  }
+
+  /** Redraws the back shortly after typing stops. */
   protected redraw(): void {
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.postcard.render(), 250);
+    this.timer = setTimeout(() => void this.postcard.render('back'), 250);
   }
 
   /** Clicking the dimmed backdrop closes the preview. */

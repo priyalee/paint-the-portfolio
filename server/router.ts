@@ -1,4 +1,5 @@
 import { admin } from './admin';
+import { alerts } from './alerts';
 import type { Env } from './env';
 import { HttpError, fail, json } from './http';
 import { postcards } from './postcards';
@@ -36,6 +37,8 @@ export async function handle(req: Request, env: Env, ctx?: Ctx): Promise<Respons
         return await postcards(req, env, rest, ctx);
       case 'admin':
         return await admin(req, env, rest);
+      case 'alerts':
+        return await alerts(req, env);
       default:
         return fail(404, 'Not found.');
     }

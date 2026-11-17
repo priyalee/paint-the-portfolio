@@ -43,7 +43,7 @@ export class PaintDock {
     if (
       !target ||
       target.closest(
-        'a, button, input, textarea, select, label, canvas, svg, dialog, .paintable, app-brush-reveal, app-paint-dock, app-content-editor, app-celebration-layer, app-navbar, app-splash-canvas, app-mural-canvas',
+        'a, button, input, textarea, select, label, canvas, svg, dialog, .paintable, app-brush-reveal, app-paint-dock, app-postcard-bell, app-content-editor, app-celebration-layer, app-navbar, app-splash-canvas, app-mural-canvas',
       )
     ) {
       return;

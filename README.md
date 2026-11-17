@@ -219,6 +219,14 @@ npm run api                      # site + backend on http://localhost:8788
 
 `npx ng serve --port 4300` forwards `/api` to that local backend (`proxy.conf.json`), so live reload and the backend work together. Restart `ng serve` once after adding the proxy for the first time.
 
+### The postcard bell (owner only)
+
+Signing in to `/admin` sets that device up for a small **bell** in the top-right corner of the site. The bell **appears when new postcards arrive** and shows how many are new. It **stays until you click it**, even across reloads. Clicking it opens `/admin` on the postcards waiting for approval, and the bell goes away until the next new postcard arrives. The site checks every minute while a tab is open, and again when you come back to the tab.
+
+- Visitors never see it: it needs a read-only **alert key** that only `/admin` hands out. The device stores this key, never your admin key.
+- The alert key can only read the waiting count and previews (`GET /api/alerts`). It can't approve, delete or publish anything.
+- Turn it off on a device with **Bell on this device** in `/admin`. Changing `ADMIN_KEY` switches it off on every device.
+
 ### Optional: email me new postcards
 
 Create a free [Resend](https://resend.com) account and set two more secrets: `RESEND_API_KEY` and `NOTIFY_EMAIL` (your address). Each new postcard then sends you a short email. Without them, check `/admin` instead.

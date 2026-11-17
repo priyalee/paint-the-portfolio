@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Meta } from '@angular/platform-browser';
 import { ApiStatus } from '@core/api';
+import { PostcardAlerts } from '@core/postcard-alerts';
 import { Icon } from '@shared/ui/icon';
 import { AdminSession } from '../admin-session';
 import { ContentPublish } from '../components/content-publish';
@@ -63,6 +64,15 @@ type Tab = 'postcards' | 'walls' | 'content';
             </button>
             <button type="button" [class.active]="tab() === 'content'" (click)="tab.set('content')">
               <app-icon name="edit" /> Content
+            </button>
+            <button
+              type="button"
+              class="bell"
+              [attr.aria-pressed]="alerts.enabled()"
+              (click)="toggleBell()"
+              title="The postcard bell shows on this device when postcards are waiting"
+            >
+              <app-icon name="bell" /> Bell on this device: {{ alerts.enabled() ? 'on' : 'off' }}
             </button>
             <button type="button" class="out" (click)="session.logout()">Sign out</button>
           </nav>
@@ -154,14 +164,21 @@ type Tab = 'postcards' | 'walls' | 'content';
       background: var(--ink);
       color: var(--paper);
     }
-    .tabs .out {
+    .tabs .bell {
       margin-left: auto;
+      border-style: dashed;
+    }
+    .tabs .bell[aria-pressed='true'] {
+      border-style: solid;
+    }
+    .tabs .out {
       border-style: dashed;
     }
   `,
 })
 export class AdminPage {
   protected readonly session = inject(AdminSession);
+  protected readonly alerts = inject(PostcardAlerts);
   protected readonly apiUp = inject(ApiStatus).available();
   protected readonly tab = signal<Tab>('postcards');
   protected readonly keyInput = signal('');
@@ -173,6 +190,17 @@ export class AdminPage {
     meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
     inject(DestroyRef).onDestroy(() => meta.removeTag('name="robots"'));
     if (this.apiUp) void this.session.resume();
+    // Clicking the postcard bell (even from inside the office) opens the Postcards tab.
+    const opened = this.alerts.reviewRequests();
+    effect(() => {
+      if (this.alerts.reviewRequests() !== opened) this.tab.set('postcards');
+    });
+  }
+
+  /** Switches the postcard bell on or off for this device. */
+  protected async toggleBell(): Promise<void> {
+    if (this.alerts.enabled()) this.alerts.switchOff();
+    else await this.alerts.switchOn(this.session);
   }
 
   protected async login(): Promise<void> {

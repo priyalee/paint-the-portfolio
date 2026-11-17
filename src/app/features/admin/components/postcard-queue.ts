@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { FlipCard } from '@shared/ui/flip-card';
 import { Icon } from '@shared/ui/icon';
+import { PostcardAlerts } from '@core/postcard-alerts';
 import { AdminSession } from '../admin-session';
 import { ConfirmButton } from './confirm-button';
 
@@ -74,6 +75,7 @@ interface QueueCard {
 })
 export class PostcardQueue {
   private readonly session = inject(AdminSession);
+  private readonly alerts = inject(PostcardAlerts);
   protected readonly statuses: Status[] = ['pending', 'approved', 'hidden'];
   protected readonly labels: Record<Status, string> = { pending: 'Waiting', approved: 'On the rack', hidden: 'Hidden' };
   protected readonly status = signal<Status>('pending');
@@ -83,6 +85,11 @@ export class PostcardQueue {
   private urls: string[] = [];
 
   constructor() {
+    // The postcard bell was clicked while the office is open: show the waiting cards fresh.
+    const opened = this.alerts.reviewRequests();
+    effect(() => {
+      if (this.alerts.reviewRequests() !== opened) untracked(() => this.show('pending'));
+    });
     void this.load();
     inject(DestroyRef).onDestroy(() => this.revoke());
   }
@@ -96,12 +103,14 @@ export class PostcardQueue {
     const res = await this.session.call(`/admin/postcards/${card.id}`, { method: 'POST', body: { status } });
     if (!res.ok) return this.error.set(res.reason);
     this.cards.update((list) => list.filter((c) => c.id !== card.id));
+    void this.alerts.refresh();
   }
 
   protected async remove(card: QueueCard): Promise<void> {
     const res = await this.session.call(`/admin/postcards/${card.id}`, { method: 'DELETE' });
     if (!res.ok) return this.error.set(res.reason);
     this.cards.update((list) => list.filter((c) => c.id !== card.id));
+    void this.alerts.refresh();
   }
 
   private async load(): Promise<void> {

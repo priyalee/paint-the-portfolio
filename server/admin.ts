@@ -1,5 +1,6 @@
 import { MARK_ID } from '../src/app/core/wall-limits';
 import type { Env } from './env';
+import { alertKey } from './alerts';
 import { HttpError, json, readJson, safeEqual } from './http';
 import { POSTCARD_COLUMNS, PostcardRow, image, toPublic } from './postcards';
 
@@ -10,6 +11,7 @@ const MAX_CONTENT_BYTES = 200_000;
  * (sent as "Authorization: Bearer <key>").
  *
  * GET    /api/admin/check
+ * GET    /api/admin/alert-key         (the read-only key for the postcard bell, see alerts.ts)
  * GET    /api/admin/postcards?status=pending|approved|hidden
  * GET    /api/admin/postcards/:id/image   (front)
  * GET    /api/admin/postcards/:id/back    (back, when the card has one)
@@ -28,6 +30,7 @@ export async function admin(req: Request, env: Env, rest: string[]): Promise<Res
   const method = req.method;
 
   if (area === 'check' && method === 'GET') return json({ ok: true });
+  if (area === 'alert-key' && method === 'GET') return json({ alertKey: await alertKey(env) });
 
   if (area === 'postcards') {
     if (!id && method === 'GET') {

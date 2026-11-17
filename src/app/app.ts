@@ -9,6 +9,7 @@ import { ContentEditor } from '@layout/content-editor/content-editor';
 import { Footer } from '@layout/footer/footer';
 import { Navbar } from '@layout/navbar/navbar';
 import { PageNav } from '@layout/page-nav/page-nav';
+import { PostcardBell } from '@layout/postcard-bell/postcard-bell';
 import { PostcardDialog } from '@layout/postcard-dialog/postcard-dialog';
 import { PaintDock } from '@layout/paint-dock/paint-dock';
 import { PaintBlock } from '@shared/paint/paint-block.directive';
@@ -24,6 +25,7 @@ import { PaintBlock } from '@shared/paint/paint-block.directive';
     CelebrationLayer,
     PageNav,
     PostcardDialog,
+    PostcardBell,
     PaintBlock,
   ],
   templateUrl: './app.html',

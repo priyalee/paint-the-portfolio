@@ -1,5 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { ApiResult, api } from '@core/api';
+import { PostcardAlerts } from '@core/postcard-alerts';
 
 const KEY = 'ink-pigment:admin-key';
 
@@ -11,6 +12,7 @@ const KEY = 'ink-pigment:admin-key';
 export class AdminSession {
   readonly key = signal(read());
   readonly signedIn = signal(false);
+  private readonly alerts = inject(PostcardAlerts);
 
   async login(key: string): Promise<ApiResult<unknown>> {
     const res = await api('/admin/check', { key });
@@ -18,6 +20,8 @@ export class AdminSession {
       this.key.set(key);
       this.signedIn.set(true);
       write(key);
+      // Give this device the postcard bell (a read-only key, never the admin key).
+      void this.alerts.setUp(this);
     }
     return res;
   }

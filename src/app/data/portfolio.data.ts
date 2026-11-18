@@ -9,6 +9,8 @@
  * in Colour mode before the visitor paints it.
  */
 
+import type { ProjectSketch } from '@shared/art/project-sketches';
+
 export interface SkillItem {
   /** Stable paint key (core/paint-keys); filled in automatically when missing. */
   key?: string;
@@ -32,6 +34,8 @@ export interface Project {
   tech: string[];
   links: { label: string; url: string }[];
   slot: number;
+  /** Line sketch drawn on the project's chip (see shared/art/project-sketches.ts). */
+  sketch?: ProjectSketch;
 }
 
 export interface ExperienceItem {
@@ -216,6 +220,7 @@ export const PORTFOLIO: Portfolio = {
         },
       ],
       slot: 0,
+      sketch: 'canvas',
     },
     {
       title: 'Ng-Store',
@@ -235,6 +240,7 @@ export const PORTFOLIO: Portfolio = {
         },
       ],
       slot: 3,
+      sketch: 'store',
     },
     {
       title: 'NOVA',
@@ -254,6 +260,7 @@ export const PORTFOLIO: Portfolio = {
         },
       ],
       slot: 1,
+      sketch: 'voice',
     },
   ],
   experience: [

@@ -170,7 +170,8 @@
           "url": "https://github.com/priyalee/paint-the-portfolio"
         }
       ],
-      "slot": 0
+      "slot": 0,
+      "sketch": "canvas"
     },
     {
       "title": "Ng-Store",
@@ -193,7 +194,8 @@
           "url": "https://github.com/priyalee/ngstore"
         }
       ],
-      "slot": 3
+      "slot": 3,
+      "sketch": "store"
     },
     {
       "title": "NOVA",
@@ -216,7 +218,8 @@
           "url": "https://github.com/priyalee/nova-voice-assistant"
         }
       ],
-      "slot": 1
+      "slot": 1,
+      "sketch": "voice"
     }
   ],
   "experience": [

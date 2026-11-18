@@ -2,7 +2,7 @@
 <div class="inner">
   <!-- FRONT: paintable swatch -->
   <div class="face front" [inert]="flipped()">
-    <svg class="art swatch" viewBox="0 0 300 170" preserveAspectRatio="none">
+    <svg class="art swatch" viewBox="0 0 300 170" preserveAspectRatio="xMidYMid slice">
       <rect
         x="0"
         y="0"
@@ -13,6 +13,12 @@
         [trueColor]="p.slot"
         [label]="p.title + ' colour chip'"
       />
+      <!-- Line sketch of the project; clicks pass through to the chip. -->
+      <g class="sketch" aria-hidden="true">
+        @for (s of sketch(); track $index) {
+          <path [attr.d]="s.d" [class.line]="s.line" />
+        }
+      </g>
     </svg>
     <div class="meta">
       <div class="row">
@@ -22,7 +28,12 @@
       <span class="colour">{{ colourName() }}</span>
       <h3>{{ p.title }}</h3>
       <p class="tagline">{{ p.tagline }}</p>
-      <button type="button" class="flip" (click)="flipped.set(true)" [attr.aria-expanded]="flipped()">
+      <button
+        type="button"
+        class="flip"
+        (click)="flipped.set(true)"
+        [attr.aria-expanded]="flipped()"
+      >
         Details <app-icon name="flip" />
       </button>
     </div>
@@ -40,7 +51,9 @@
     </ul>
     <div class="links">
       @for (l of p.links; track $index) {
-        <a [href]="l.url" target="_blank" rel="noopener">{{ l.label }} <app-icon name="external" /></a>
+        <a [href]="l.url" target="_blank" rel="noopener"
+          >{{ l.label }} <app-icon name="external"
+        /></a>
       }
     </div>
     <button type="button" class="flip" (click)="flipped.set(false)">

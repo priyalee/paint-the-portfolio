@@ -2,9 +2,10 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Icon } from '@shared/ui/icon';
 import { PaintState } from '@core/paint-state';
+import { DEFAULT_SKETCH, PROJECT_SKETCHES } from '@shared/art/project-sketches';
 import { EditorSession } from '../editor-session';
 
-/** Editor tab: Projects, tech, chip colour and links. */
+/** Editor tab: Projects, tech, chip colour, picture and links. */
 @Component({
   selector: 'app-projects-tab',
   imports: [FormsModule, Icon],
@@ -42,6 +43,14 @@ import { EditorSession } from '../editor-session';
         <label class="field">
           <span>Tech (comma separated)</span>
           <input [value]="p.tech.join(', ')" (change)="session.setTech(p, $any($event.target).value)" />
+        </label>
+        <label class="field">
+          <span>Picture on the chip</span>
+          <select [ngModel]="p.sketch ?? defaultSketch" (ngModelChange)="p.sketch = $event; session.changed()">
+            @for (s of sketches; track s[0]) {
+              <option [value]="s[0]">{{ s[1] }}</option>
+            }
+          </select>
         </label>
         <div class="field">
           <span>Chip colour</span>
@@ -84,4 +93,6 @@ import { EditorSession } from '../editor-session';
 export class ProjectsTab {
   protected readonly session = inject(EditorSession);
   protected readonly paint = inject(PaintState);
+  protected readonly sketches = Object.entries(PROJECT_SKETCHES);
+  protected readonly defaultSketch = DEFAULT_SKETCH;
 }

@@ -20,6 +20,7 @@ Field guide
   skills               groups (Frontend, Design, ...) with items; level is 0-100
   projects             title, year, tagline, description, tech, links (full https:// URLs),
                        slot 0-5 picks the colour accent
+                       sketch picks the chip picture: canvas, store, voice, chart or code
   experience           newest first, education included
   socials              GitHub, LinkedIn, ... with full https:// URLs
 

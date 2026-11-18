@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { PaintState } from '@core/paint-state';
 import { Project } from '@data/portfolio.data';
+import { DEFAULT_SKETCH, SKETCH_ART } from '@shared/art/project-sketches';
 import { Paintable } from '@shared/paint/paintable.directive';
 import { Icon } from '@shared/ui/icon';
 
@@ -22,6 +23,9 @@ export class ProjectChip {
 
   private readonly state = inject(PaintState);
   protected readonly flipped = signal(false);
+
+  /** The line sketch drawn over the swatch. */
+  protected readonly sketch = computed(() => SKETCH_ART[this.project().sketch ?? DEFAULT_SKETCH]);
 
   /** The chip's "paint name": whatever pigment currently shows on it. */
   protected readonly colourName = computed(() => {

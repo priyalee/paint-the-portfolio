@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiStatus, api } from '@core/api';
 import { KEY_PATTERN, withKeys } from '@core/paint-keys';
+import { isProjectSketch } from '@shared/art/project-sketches';
 import {
   ExperienceItem,
   PORTFOLIO,
@@ -209,6 +210,7 @@ export function normalizePortfolio(input: unknown, base: Portfolio): Portfolio {
               return url ? { label: str(l['label'], 'Link', 30), url } : null;
             }, 4),
             slot: int(p['slot'], i % 6, 0, 5),
+            ...(isProjectSketch(p['sketch']) ? { sketch: p['sketch'] } : {}),
           }
         : null,
     ), (p) => p.title, 'project'),

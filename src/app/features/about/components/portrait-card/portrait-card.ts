@@ -13,7 +13,7 @@ import { PaintBlock } from '@shared/paint/paint-block.directive';
     <div class="card frame" appPaintBlock="about-" blockTitle="Portrait">
       <app-art [art]="art" prefix="about-" label="Portrait sketch — click shapes to paint" />
     </div>
-    <p class="hand note">That's me. Give me a new sweater?</p>
+    <p class="hand note">That's me. Give me a new hoodie?</p>
   `,
   styles: `
     :host {

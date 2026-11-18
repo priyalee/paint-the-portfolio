@@ -86,26 +86,77 @@ export const PORTRAIT: Artwork = {
     { id: 'backdrop', label: 'Backdrop circle', d: circle(200, 215, 180), slot: 3 },
     {
       id: 'torso',
-      label: 'Sweater',
-      d: 'M64 440C74 344 136 306 200 306C264 306 326 344 336 440Z',
-      slot: 0,
+      label: 'Hoodie',
+      d: 'M56 440C64 352 124 316 200 316C276 316 336 352 344 440Z',
+      slot: 4,
     },
-    { id: 'collar', label: 'Collar', d: 'M168 309L200 356L232 309Z', slot: null },
-    { id: 'neck', label: 'Neck', d: 'M178 262h44v46q-22 14-44 0Z', slot: 5 },
-    { id: 'head', label: 'Face', d: circle(200, 200, 78), slot: 5 },
+    { id: 'pocket', label: 'Hoodie pocket', d: 'M146 440L158 398H242L254 440Z', slot: 4 },
     {
-      id: 'hair',
-      label: 'Hair',
-      d: 'M120 206C112 132 158 104 202 104C254 104 290 138 282 206C266 168 238 148 202 148C170 148 140 166 120 206Z',
+      id: 'hood',
+      label: 'Hood',
+      d: 'M138 326C140 300 166 288 200 288C234 288 260 300 262 326C246 346 154 346 138 326Z',
+      slot: 4,
+    },
+    // Headphones resting around the neck: the band runs behind the neck.
+    {
+      id: 'band',
+      label: 'Headphone band',
+      d: 'M150 324C150 286 172 268 200 268C228 268 250 286 250 324H238C238 294 222 280 200 280C178 280 162 294 162 324Z',
       slot: 2,
     },
-    { id: 'lens-l', label: 'Left lens', d: circle(170, 206, 20), slot: null },
-    { id: 'lens-r', label: 'Right lens', d: circle(230, 206, 20), slot: null },
-    { id: 'bridge', label: 'Glasses bridge', d: 'M190 204q10-6 20 0', slot: 'line' },
+    { id: 'neck', label: 'Neck', d: 'M180 268h40v44q-20 14-40 0Z', slot: 5 },
+    {
+      id: 'cup-l',
+      label: 'Left ear cup',
+      d: 'M142 318a16 16 0 0 1 32 0v10a16 16 0 0 1-32 0Z',
+      slot: 0,
+    },
+    {
+      id: 'cup-r',
+      label: 'Right ear cup',
+      d: 'M226 318a16 16 0 0 1 32 0v10a16 16 0 0 1-32 0Z',
+      slot: 0,
+    },
+    { id: 'string-l', label: 'Drawstring', d: 'M188 340v34', slot: 'line' },
+    { id: 'string-r', label: 'Drawstring', d: 'M212 340v34', slot: 'line' },
+    // Long, open hair falling over the shoulders.
+    {
+      id: 'lock-l',
+      label: 'Hair (left)',
+      d: 'M128 190C114 252 120 330 106 406C122 414 142 410 154 400C150 340 146 278 152 234Z',
+      slot: 2,
+    },
+    {
+      id: 'lock-r',
+      label: 'Hair (right)',
+      d: 'M272 190C286 252 280 330 294 406C278 414 258 410 246 400C250 340 254 278 248 234Z',
+      slot: 2,
+    },
+    {
+      id: 'head',
+      label: 'Face',
+      d: 'M200 124C246 124 272 160 272 204C272 252 240 284 200 284C160 284 128 252 128 204C128 160 154 124 200 124Z',
+      slot: 5,
+    },
+    {
+      id: 'hair',
+      label: 'Hair (fringe)',
+      d: 'M126 214C116 140 156 112 202 112C250 112 286 142 276 214C266 178 248 156 222 148C204 166 168 182 126 214Z',
+      slot: 2,
+    },
+    { id: 'earring-l', label: 'Left earring', d: circle(134, 250, 9), slot: 1 },
+    { id: 'earring-r', label: 'Right earring', d: circle(266, 250, 9), slot: 1 },
+    { id: 'eye-l', label: 'Left eye', d: 'M164 212q11-9 22 0', slot: 'line' },
+    { id: 'eye-r', label: 'Right eye', d: 'M214 212q11-9 22 0', slot: 'line' },
     { id: 'smile', label: 'Smile', d: 'M182 246q18 14 36 0', slot: 'line' },
     { id: 'pencil', label: 'Pencil', d: 'M298 126L338 86L354 102L314 142Z', slot: 1 },
     { id: 'pencil-tip', label: 'Pencil tip', d: 'M298 126L288 152L314 142Z', slot: null },
-    { id: 'drop', label: 'Paint drop', d: 'M84 74c12 16 18 25 18 34a18 18 0 0 1-36 0c0-9 6-18 18-34Z', slot: 1 },
+    {
+      id: 'drop',
+      label: 'Paint drop',
+      d: 'M84 74c12 16 18 25 18 34a18 18 0 0 1-36 0c0-9 6-18 18-34Z',
+      slot: 1,
+    },
   ],
 };
 
@@ -127,13 +178,28 @@ function envelope(): Artwork {
     title: 'Airmail envelope',
     viewBox: '0 0 360 250',
     shapes: [
-      { id: 'body', label: 'Envelope', d: rect(x0 + band, y0 + band, x1 - band, y1 - band), slot: null },
+      {
+        id: 'body',
+        label: 'Envelope',
+        d: rect(x0 + band, y0 + band, x1 - band, y1 - band),
+        slot: null,
+      },
       ...airmailStripes(x0, y0, x1, y1, band),
       { id: 'edge', label: 'Edge', d: rect(x0, y0, x1, y1), slot: 'line' },
-      { id: 'edge-in', label: 'Inner edge', d: rect(x0 + band, y0 + band, x1 - band, y1 - band), slot: 'line' },
+      {
+        id: 'edge-in',
+        label: 'Inner edge',
+        d: rect(x0 + band, y0 + band, x1 - band, y1 - band),
+        slot: 'line',
+      },
 
       // Air mail label: a plane and two lines of "lettering".
-      { id: 'label', label: 'Air mail label', d: 'M40 48h86a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4h-86a4 4 0 0 1-4-4v-20a4 4 0 0 1 4-4Z', slot: 4 },
+      {
+        id: 'label',
+        label: 'Air mail label',
+        d: 'M40 48h86a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4h-86a4 4 0 0 1-4-4v-20a4 4 0 0 1 4-4Z',
+        slot: 4,
+      },
       {
         id: 'plane',
         label: 'Plane',
@@ -146,10 +212,20 @@ function envelope(): Artwork {
       { id: 'stamp', label: 'Stamp', d: perforated(266, 44, 58, 70, 3), slot: 2 },
       { id: 'stamp-picture', label: 'Stamp picture', d: rect(273, 51, 317, 107), slot: null },
       { id: 'stamp-sun', label: 'Stamp sun', d: circle(306, 63, 6), slot: 0 },
-      { id: 'stamp-hills', label: 'Stamp mountains', d: 'M273 107V97L285 74L293 87L300 79L317 100V107Z', slot: 3 },
+      {
+        id: 'stamp-hills',
+        label: 'Stamp mountains',
+        d: 'M273 107V97L285 74L293 87L300 79L317 100V107Z',
+        slot: 3,
+      },
 
       // Postmark and wavy cancellation lines (decoration only).
-      { id: 'postmark', label: 'Postmark', d: `${circle(252, 104, 22)}${circle(252, 104, 16)}`, slot: 'line' },
+      {
+        id: 'postmark',
+        label: 'Postmark',
+        d: `${circle(252, 104, 22)}${circle(252, 104, 16)}`,
+        slot: 'line',
+      },
       {
         id: 'cancel',
         label: 'Cancellation',
@@ -163,7 +239,12 @@ function envelope(): Artwork {
       // Wax seal with a heart.
       { id: 'seal', label: 'Wax seal', d: scalloped(76, 178, 28, 16), slot: 0 },
       { id: 'seal-ring', label: 'Seal rim', d: circle(76, 178, 20), slot: 'line' },
-      { id: 'heart', label: 'Heart', d: 'M76 190C63 181 61 166 76 171C91 166 89 181 76 190Z', slot: 1 },
+      {
+        id: 'heart',
+        label: 'Heart',
+        d: 'M76 190C63 181 61 166 76 171C91 166 89 181 76 190Z',
+        slot: 1,
+      },
     ],
   };
 }
@@ -202,16 +283,25 @@ function airmailStripes(x0: number, y0: number, x1: number, y1: number, band: nu
   for (let k = Math.floor((x0 + y0) / half); k * half < x1 + y1; k++) {
     const [lo, hi] = [k * half, (k + 1) * half];
     for (const [ax, ay, bx, by] of parts) {
-      let poly: P[] = [[ax, ay], [bx, ay], [bx, by], [ax, by]];
+      let poly: P[] = [
+        [ax, ay],
+        [bx, ay],
+        [bx, by],
+        [ax, by],
+      ];
       poly = clip(poly, ([x, y]) => x + y - lo);
       poly = clip(poly, ([x, y]) => hi - (x + y));
       if (poly.length < 3) continue;
-      const area = Math.abs(poly.reduce((sum, [x, y], i) => {
-        const [nx, ny] = poly[(i + 1) % poly.length];
-        return sum + x * ny - nx * y;
-      }, 0)) / 2;
+      const area =
+        Math.abs(
+          poly.reduce((sum, [x, y], i) => {
+            const [nx, ny] = poly[(i + 1) % poly.length];
+            return sum + x * ny - nx * y;
+          }, 0),
+        ) / 2;
       if (area < 1) continue;
-      sets[((k % 2) + 2) % 2] += `M${poly.map(([x, y]) => `${+x.toFixed(2)} ${+y.toFixed(2)}`).join('L')}Z`;
+      sets[((k % 2) + 2) % 2] +=
+        `M${poly.map(([x, y]) => `${+x.toFixed(2)} ${+y.toFixed(2)}`).join('L')}Z`;
     }
   }
   return [
@@ -295,7 +385,7 @@ function mosaic(): Artwork {
   const rows = 6;
   const s = 75;
   let seed = 7;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const shapes: ArtShape[] = [];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {

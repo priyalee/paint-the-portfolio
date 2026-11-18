@@ -1,4 +1,4 @@
-# Ink & Pigment
+# Studio Priyalee
 
 **A black-and-white portfolio that visitors colour in.**
 
@@ -239,6 +239,7 @@ One-time setup (needs a free Cloudflare account):
 
 ```bash
 npx wrangler login
+# The Cloudflare project and database are named ink-pigment (the site's original name).
 npx wrangler d1 create ink-pigment        # copy the printed database_id into wrangler.toml
 npm run db:migrate                        # creates the tables in the live database
 npx wrangler pages project create ink-pigment --production-branch main

@@ -256,8 +256,8 @@ export class Postcard {
       message: this.message().trim() || DEFAULT_MESSAGE,
       from: this.from().trim() || 'a visitor',
       stamp: this.stamp(),
-      stampLabel: name && c.initials.trim() ? [c.initials.trim().slice(0, 3)] : ['Ink &', 'Pigment'],
-      to: name ? [name, c.role, publicSite() ?? ''] : ['The Ink & Pigment studio', '', publicSite() ?? ''],
+      stampLabel: name && c.initials.trim() ? [c.initials.trim().slice(0, 3)] : ['Studio', 'Priyalee'],
+      to: name ? [name, c.role, publicSite() ?? ''] : ['Studio Priyalee', '', publicSite() ?? ''],
       date: new Date(),
     });
   }
@@ -275,7 +275,7 @@ export class Postcard {
 
   private basename(): string {
     const name = realName(this.content().name);
-    return `postcard-${name ? slug(name) : 'ink-pigment'}`;
+    return `postcard-${name ? slug(name) : 'studio-priyalee'}`;
   }
 
   private remember(): void {
@@ -305,7 +305,7 @@ function firstName(name: string): string {
 /** "Priyalee Dahiya's portfolio", "James' portfolio", or the site name before a name is set. */
 function cardTitle(name: string): string {
   const n = realName(name);
-  if (!n) return 'the Ink & Pigment studio';
+  if (!n) return 'Studio Priyalee';
   return `${n}${/s$/i.test(n) ? "'" : "'s"} portfolio`;
 }
 

@@ -205,6 +205,10 @@
     inset: var(--nav-h) 12px auto;
     flex-direction: column;
     padding: 12px;
+    /* Phones held sideways are short: keep every link reachable. */
+    max-height: calc(100dvh - var(--nav-h) - 12px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: var(--paper);
     border: 2px solid var(--ink);
     border-radius: var(--radius-lg);

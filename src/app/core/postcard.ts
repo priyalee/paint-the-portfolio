@@ -50,7 +50,7 @@ export class Postcard {
   readonly message = signal('');
   readonly from = signal(readFrom());
   readonly paper = signal<CardPaper>('light');
-  readonly stamp = signal('#E4572E');
+  readonly stamp = signal('#F2420F');
   /** Which side the preview shows. */
   readonly side = signal<CardSide>('front');
 

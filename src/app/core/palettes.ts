@@ -18,14 +18,15 @@ export const SLOT_COUNT = 6;
 
 export const PALETTES: readonly Palette[] = [
   {
-    name: 'Gouache Sunset',
+    name: 'Gouache Pop',
     colors: [
-      { name: 'Vermilion', hex: '#E4572E' },
-      { name: 'Saffron', hex: '#F3A712' },
-      { name: 'Midnight', hex: '#29335C' },
-      { name: 'Steel Blue', hex: '#669BBC' },
-      { name: 'Sage', hex: '#A8C686' },
-      { name: 'Dusty Rose', hex: '#D88C9A' },
+      // Vermilion must stay >= 3:1 on paper: it's the site's accent colour.
+      { name: 'Vermilion', hex: '#F2420F' },
+      { name: 'Marigold', hex: '#FFB000' },
+      { name: 'Cobalt', hex: '#2440B8' },
+      { name: 'Azure', hex: '#1E9BEA' },
+      { name: 'Spring Green', hex: '#5CC93A' },
+      { name: 'Bubblegum', hex: '#FF5C9D' },
     ],
   },
   {

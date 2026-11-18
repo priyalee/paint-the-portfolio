@@ -48,6 +48,7 @@ interface Tip {
             [attr.aria-label]="ariaFor(s, claim)"
             (click)="onPick(s, $event)"
             (keydown.enter)="onPick(s)"
+            (keydown.space)="$event.preventDefault(); onPick(s)"
             (pointermove)="hover(s, claim, $event)"
             (pointerdown)="hover(s, claim, $event)"
           />

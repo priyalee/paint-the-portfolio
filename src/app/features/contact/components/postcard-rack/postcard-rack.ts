@@ -1,5 +1,15 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ApiStatus, api } from '@core/api';
 import { DEFAULT_MESSAGE } from '@core/postcard';
 import { FlipCard, FlipSide } from '@shared/ui/flip-card';
@@ -48,7 +58,7 @@ interface RackCard {
           <header>
             <h2 id="rack-viewer-title">Postcard from {{ c.from }}</h2>
             <span class="count">{{ (open() ?? 0) + 1 }} of {{ cards().length }}</span>
-            <button type="button" class="round" (click)="viewer.close()" aria-label="Close">
+            <button type="button" class="round close" (click)="viewer.close()" aria-label="Close">
               <app-icon name="close" />
             </button>
           </header>
@@ -235,6 +245,7 @@ export class PostcardRack {
     return i === null ? null : (this.cards()[i] ?? null);
   });
   private readonly viewer = viewChild.required<ElementRef<HTMLDialogElement>>('viewer');
+  private readonly injector = inject(Injector);
 
   constructor() {
     if (inject(ApiStatus).available()) void this.load();
@@ -244,7 +255,10 @@ export class PostcardRack {
     this.open.set(i);
     this.side.set('front');
     const el = this.viewer().nativeElement;
-    if (!el.open) el.showModal();
+    if (el.open) return;
+    el.showModal();
+    // The card is drawn on the next render; focus its close button rather than the bare dialog.
+    afterNextRender(() => el.querySelector<HTMLElement>('.close')?.focus(), { injector: this.injector });
   }
 
   /** Previous / next card, wrapping around. */
@@ -269,6 +283,6 @@ export class PostcardRack {
 
   private async load(): Promise<void> {
     const res = await api<RackCard[]>('/postcards');
-    if (res.ok) this.cards.set(res.data);
+    if (res.ok && Array.isArray(res.data)) this.cards.set(res.data);
   }
 }

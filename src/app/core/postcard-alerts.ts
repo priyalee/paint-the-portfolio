@@ -31,7 +31,7 @@ const EVERY_MS = 60_000;
 @Injectable({ providedIn: 'root' })
 export class PostcardAlerts {
   private readonly apiUp = inject(ApiStatus).available;
-  private readonly key = signal(read(KEY));
+  private readonly key = signal(savedKey());
 
   /** This device shows the bell. */
   readonly enabled = computed(() => this.apiUp() && !!this.key());
@@ -129,6 +129,16 @@ export class PostcardAlerts {
     this.timer = undefined;
     document.removeEventListener('visibilitychange', this.onWake);
   }
+}
+
+/** The saved alert key, or '' (and forgotten) if what's stored isn't one: real keys are 64 hex characters. */
+function savedKey(): string {
+  const k = read(KEY);
+  if (k && !/^[0-9a-f]{64}$/.test(k)) {
+    write(KEY, '');
+    return '';
+  }
+  return k;
 }
 
 function read(key: string): string {

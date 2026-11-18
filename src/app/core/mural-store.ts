@@ -105,7 +105,7 @@ class LocalMuralBackend implements MuralBackend {
 class HttpMuralBackend implements MuralBackend {
   async list(): Promise<MuralClaim[] | null> {
     const res = await api<MuralClaim[]>('/mural');
-    return res.ok ? res.data.filter(isValidClaim) : null;
+    return res.ok && Array.isArray(res.data) ? res.data.filter(isValidClaim) : null;
   }
 
   /** Only the browser holding the claim's edit token painted it. */

@@ -29,13 +29,20 @@ const WRITES_PER_HOUR = 12;
  * the same Wi-Fi (a home, an office) each leave their own.
  */
 const MARKS_PER_NETWORK = 3;
+/**
+ * Most splashes the wall keeps. New splashes are refused once it is full, and
+ * visitors only ever download this many, so spam can't grow it without end.
+ */
+const MAX_SPLASHES = 1500;
 
-/** Refuses a new mark when this network already has its share on the wall. */
-async function checkNetworkShare(env: Env, table: 'mural_claims' | 'splashes', who: string, noun: string): Promise<void> {
+function alreadyThere(noun: string): HttpError {
+  return new HttpError(429, `You've already left your ${noun} on this wall — thank you! Find it with a hover.`);
+}
+
+/** Network share check for a friendly early answer; the INSERT re-checks it atomically. */
+async function networkShareUsed(env: Env, table: 'mural_claims' | 'splashes', who: string): Promise<boolean> {
   const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ip_hash = ?`).bind(who).first<{ n: number }>();
-  if ((row?.n ?? 0) >= MARKS_PER_NETWORK) {
-    throw new HttpError(429, `You've already left your ${noun} on this wall — thank you! Find it with a hover.`);
-  }
+  return (row?.n ?? 0) >= MARKS_PER_NETWORK;
 }
 
 interface Signature {
@@ -88,19 +95,25 @@ export async function mural(req: Request, env: Env, rest: string[]): Promise<Res
     const taken = await env.DB.prepare('SELECT 1 FROM mural_claims WHERE region_id = ?').bind(regionId).first();
     if (taken) throw new HttpError(409, 'Someone just painted that shape — pick another one.');
     const who = await visitorHash(req, env);
-    await checkNetworkShare(env, 'mural_claims', who, 'shape');
+    if (await networkShareUsed(env, 'mural_claims', who)) throw alreadyThere('shape');
     await rateLimit(env, who, 'wall', WRITES_PER_HOUR, 3600_000);
 
     const token = randomToken();
     const createdAt = Date.now();
+    // One statement: the shape must still be free and this network under its share,
+    // so a burst of simultaneous requests can't claim more than allowed.
     const result = await env.DB.prepare(
       `INSERT INTO mural_claims (id, region_id, color, name, place, created_at, token_hash, ip_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+       SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+       WHERE (SELECT COUNT(*) FROM mural_claims WHERE ip_hash = ?8) < ?9
+       ON CONFLICT DO NOTHING`,
     )
-      .bind(id, regionId, sig.color, sig.name, sig.place, createdAt, await sha256(token), who)
+      .bind(id, regionId, sig.color, sig.name, sig.place, createdAt, await sha256(token), who, MARKS_PER_NETWORK)
       .run();
     if (!result.meta.changes) {
-      throw new HttpError(409, 'Someone just painted that shape — pick another one.');
+      const taken = await env.DB.prepare('SELECT 1 FROM mural_claims WHERE region_id = ? OR id = ?').bind(regionId, id).first();
+      if (taken) throw new HttpError(409, 'Someone just painted that shape — pick another one.');
+      throw alreadyThere('shape');
     }
     return json({ claim: { id, regionId, ...sig, createdAt }, editToken: token }, 201);
   }
@@ -128,8 +141,10 @@ export async function mural(req: Request, env: Env, rest: string[]): Promise<Res
 export async function splashes(req: Request, env: Env, rest: string[]): Promise<Response> {
   if (req.method === 'GET' && rest.length === 0) {
     const { results } = await env.DB.prepare(
-      'SELECT id, x, y, seed, size, color, name, place, created_at FROM splashes ORDER BY created_at',
-    ).all<{
+      `SELECT * FROM (
+         SELECT id, x, y, seed, size, color, name, place, created_at FROM splashes ORDER BY created_at DESC LIMIT ?
+       ) ORDER BY created_at`,
+    ).bind(MAX_SPLASHES).all<{
       id: string;
       x: number;
       y: number;
@@ -160,18 +175,28 @@ export async function splashes(req: Request, env: Env, rest: string[]): Promise<
     }
     const sig = readSignature(body);
     const who = await visitorHash(req, env);
-    await checkNetworkShare(env, 'splashes', who, 'splash');
+    if (await networkShareUsed(env, 'splashes', who)) throw alreadyThere('splash');
     await rateLimit(env, who, 'wall', WRITES_PER_HOUR, 3600_000);
 
     const token = randomToken();
     const createdAt = Date.now();
+    // One statement: under this network's share and under the wall's overall cap.
     const result = await env.DB.prepare(
       `INSERT INTO splashes (id, x, y, seed, size, color, name, place, created_at, token_hash, ip_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+       SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11
+       WHERE (SELECT COUNT(*) FROM splashes WHERE ip_hash = ?11) < ?12
+         AND (SELECT COUNT(*) FROM splashes) < ?13
+       ON CONFLICT DO NOTHING`,
     )
-      .bind(id, x, y, seed, size, sig.color, sig.name, sig.place, createdAt, await sha256(token), who)
+      .bind(id, x, y, seed, size, sig.color, sig.name, sig.place, createdAt, await sha256(token), who, MARKS_PER_NETWORK, MAX_SPLASHES)
       .run();
-    if (!result.meta.changes) throw new HttpError(409, 'That splash is already on the wall.');
+    if (!result.meta.changes) {
+      if (await env.DB.prepare('SELECT 1 FROM splashes WHERE id = ?').bind(id).first()) {
+        throw new HttpError(409, 'That splash is already on the wall.');
+      }
+      if (await networkShareUsed(env, 'splashes', who)) throw alreadyThere('splash');
+      throw new HttpError(503, 'The splash wall is full for now — thank you for stopping by!');
+    }
     return json({ splash: { id, x, y, seed, size, ...sig, createdAt }, editToken: token }, 201);
   }
 

@@ -1,4 +1,5 @@
 import { DOCUMENT, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ContentStore } from '@core/content-store';
 import { PaintState } from '@core/paint-state';
 import { Postcard } from '@core/postcard';
 import { Icon } from '@shared/ui/icon';
@@ -24,6 +25,7 @@ export class PaintDock {
   protected readonly state = inject(PaintState);
   private readonly doc = inject(DOCUMENT);
   protected readonly postcard = inject(Postcard);
+  private readonly content = inject(ContentStore);
   protected readonly collapsed = signal(false);
   protected readonly moodFlash = signal(false);
   protected readonly hint = signal('');
@@ -65,10 +67,17 @@ export class PaintDock {
   }
 
   protected onKey(e: KeyboardEvent): void {
+    if (e.defaultPrevented) return;
     const target = e.target as HTMLElement | null;
-    if (target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
-    // Paint keys belong to the page: leave them alone while a postcard or the rack viewer is open.
-    if (this.doc.querySelector('dialog[open]')) return;
+    // Typing in a field or working in the content editor panel is not painting.
+    if (
+      target?.isContentEditable ||
+      target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], app-content-editor .panel')
+    )
+      return;
+    // Paint keys belong to the page: leave them alone while a postcard, the rack viewer
+    // or the content editor is open (even when focus has wandered outside the editor).
+    if (this.doc.querySelector('dialog[open]') || this.content.editorOpen()) return;
     const k = e.key.toLowerCase();
     if ((e.ctrlKey || e.metaKey) && k === 'z') {
       e.preventDefault();

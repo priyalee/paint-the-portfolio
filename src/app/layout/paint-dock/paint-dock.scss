@@ -25,7 +25,7 @@
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-  max-width: 820px;
+  max-width: 920px;
   /* room for the lifted active pan and its paint drip so they aren't clipped */
   padding-block: 10px 12px;
   margin-block: -10px -12px;
@@ -259,84 +259,142 @@ button {
   white-space: nowrap;
 }
 
-/* Phones: two compact rows instead of one long, hidden-scrolling strip.
-   Row 1 = colours + palette shuffle (used most), row 2 = tools + history. */
-@media (max-width: 720px) {
+/* Phones, small tablets and phones held sideways: two rows with big, easy tap targets.
+   Row 1 = the paint pans + mood shuffle, row 2 = open/close, tools and history.
+   The body is flattened (display: contents) so the open/close button can join
+   row 2 instead of taking a column of its own, and buttons stretch to fill the
+   width (about 44px on most phones). */
+@media (max-width: 860px) {
   :host {
-    left: 10px;
-    right: 10px;
-    bottom: max(10px, env(safe-area-inset-bottom));
-    transform: none;
+    width: min(460px, calc(100vw - 20px));
     max-width: none;
+    bottom: max(10px, env(safe-area-inset-bottom));
   }
   .dock {
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 6px 4px;
     padding: 6px;
-    border-radius: 24px;
+    border-radius: 22px;
+
+    /* Line break between the two rows. */
+    &::before {
+      content: '';
+      flex-basis: 100%;
+      order: 3;
+    }
   }
   .body {
-    flex: 1;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 2px 0;
-    overflow: visible;
-    max-width: none;
-    padding-block: 6px 0;
-    margin-block: -6px 0;
-  }
-  :host(.collapsed) .body {
-    flex: 0;
-    max-width: 0;
-  }
-  :host(.collapsed) {
-    right: auto;
+    display: contents;
   }
   .group {
-    padding: 0 3px;
-    gap: 2px;
+    padding: 0;
+    gap: 4px;
     & + & {
       border-left: 0;
     }
   }
-  .swatches {
-    order: -2;
-    gap: 6px;
-  }
+
+  /* Row 1 */
   .group.swatches {
-    padding: 4px 6px;
-    margin: 0 2px 8px;
-  }
-  .mood-group {
-    order: -1;
-  }
-  .collapse {
-    align-self: center;
-    width: 38px;
-    height: 38px;
-  }
-  .tool {
-    width: 37px;
-    height: 37px;
+    order: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: space-between;
+    gap: 4px;
+    margin: 0;
+    padding: 3px;
+    border-radius: 13px;
   }
   .swatch {
-    width: 30px;
-    height: 30px;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 48px;
+    width: auto;
+    height: 40px;
+  }
+  /* Smaller drip so it doesn't reach row 2. */
+  .swatch.active::after {
+    top: calc(100% + 2px);
+    width: 8px;
+    height: 9px;
+  }
+  .mood-group {
+    order: 2;
   }
   .mood {
-    width: 37px;
-    height: 37px;
-    padding: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0 0 3px;
     justify-content: center;
   }
   .mood-name {
     display: none;
   }
+
+  /* Row 2 */
+  .collapse {
+    order: 4;
+    width: 44px;
+    height: 44px;
+    flex: 0 1 44px;
+    min-width: 36px;
+  }
+  .tools {
+    order: 5;
+  }
+  .group:last-child {
+    order: 6;
+  }
+  /* Basis 0 so the groups shrink to fit one row instead of wrapping; space is
+     shared by button count (tools can grow to 4 with "back to plain paper"). */
+  .tools,
+  .group:last-child {
+    flex: 3 1 0;
+    min-width: 0;
+    justify-content: space-around;
+  }
+  .tools:has(> :nth-child(4)) {
+    flex-grow: 4;
+  }
+  .tool {
+    flex: 0 1 44px;
+    min-width: 30px;
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Collapsed: just the open button. */
+  :host(.collapsed) {
+    width: auto;
+  }
+  :host(.collapsed) .dock::before,
+  :host(.collapsed) .group {
+    display: none;
+  }
+
   .toast {
     white-space: normal;
     width: max-content;
     max-width: calc(100vw - 40px);
     text-align: center;
     border-radius: 14px;
+  }
+}
+
+/* Touch tablets wide enough for the single strip (e.g. an iPad held sideways):
+   finger-sized pans and tools. */
+@media (min-width: 861px) and (pointer: coarse) {
+  .swatch {
+    width: 40px;
+    height: 40px;
+  }
+  .tool,
+  .mood {
+    width: 44px;
+    height: 44px;
+  }
+  .mood {
+    width: auto;
   }
 }
 

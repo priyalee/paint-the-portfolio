@@ -1,6 +1,6 @@
 @if (store.editorOpen()) {
   <div class="scrim" (click)="close()" aria-hidden="true"></div>
-  <aside class="panel" role="dialog" aria-modal="false" aria-labelledby="editor-title">
+  <aside #panel class="panel" role="dialog" aria-modal="false" aria-labelledby="editor-title" tabindex="-1">
     <header class="head">
       <div>
         <h2 id="editor-title">Edit content</h2>

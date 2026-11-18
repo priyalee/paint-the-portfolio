@@ -11,19 +11,13 @@ interface Ctx {
 
 /** Entry point for every /api/* request. */
 export async function handle(req: Request, env: Env, ctx?: Ctx): Promise<Response> {
-  const parts = new URL(req.url).pathname
-    .replace(/^\/api\/?/, '')
-    .split('/')
-    .filter(Boolean)
-    .map(decodeURIComponent);
-  const [area, ...rest] = parts;
-
   // Writes must come from the site itself (blocks other sites posting with a visitor's browser).
   if (req.method !== 'GET' && req.method !== 'HEAD' && !sameOrigin(req)) {
     return fail(403, 'Requests must come from the site.');
   }
 
   try {
+    const [area, ...rest] = pathParts(req);
     switch (area) {
       case 'health':
         return json({ ok: true });
@@ -49,15 +43,31 @@ export async function handle(req: Request, env: Env, ctx?: Ctx): Promise<Respons
   }
 }
 
-/** GET /api/content → the published content, or 404 when none was published yet. */
+/** The /api/… path split into decoded parts; a malformed %-escape is a 400, not a crash. */
+function pathParts(req: Request): string[] {
+  try {
+    return new URL(req.url).pathname
+      .replace(/^\/api\/?/, '')
+      .split('/')
+      .filter(Boolean)
+      .map(decodeURIComponent);
+  } catch {
+    throw new HttpError(400, 'That address could not be read.');
+  }
+}
+
+/**
+ * GET /api/content → the published content, or 204 (no body) when none was
+ * published yet, so the site quietly falls back to content.json.
+ */
 async function content(req: Request, env: Env): Promise<Response> {
-  if (req.method !== 'GET') throw new HttpError(405, 'Not allowed.');
+  if (req.method !== 'GET' && req.method !== 'HEAD') throw new HttpError(405, 'Not allowed.');
   const row = await env.DB.prepare('SELECT json, updated_at FROM content WHERE id = 1').first<{
     json: string;
     updated_at: number;
   }>();
-  if (!row) throw new HttpError(404, 'No published content yet.');
-  return new Response(row.json, {
+  if (!row) return new Response(null, { status: 204, headers: { 'cache-control': 'public, max-age=30' } });
+  return new Response(req.method === 'HEAD' ? null : row.json, {
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'public, max-age=30',

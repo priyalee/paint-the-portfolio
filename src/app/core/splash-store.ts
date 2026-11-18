@@ -114,7 +114,7 @@ class LocalSplashBackend implements SplashBackend {
 class HttpSplashBackend implements SplashBackend {
   async list(): Promise<Splash[] | null> {
     const res = await api<Splash[]>('/splashes');
-    return res.ok ? res.data.filter(isValidSplash) : null;
+    return res.ok && Array.isArray(res.data) ? res.data.filter(isValidSplash) : null;
   }
 
   /** Only the browser holding the splash's edit token threw it. */

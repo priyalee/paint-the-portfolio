@@ -5,6 +5,7 @@ import { siteRegionIds, studioRegionIds } from '@core/chapters';
 import { ContentStore } from '@core/content-store';
 import { PaintState } from '@core/paint-state';
 import { CelebrationLayer } from '@layout/celebration-layer/celebration-layer';
+import { ConnectionBanner } from '@layout/connection-banner/connection-banner';
 import { ContentEditor } from '@layout/content-editor/content-editor';
 import { Footer } from '@layout/footer/footer';
 import { Navbar } from '@layout/navbar/navbar';
@@ -26,6 +27,7 @@ import { PaintBlock } from '@shared/paint/paint-block.directive';
     PageNav,
     PostcardDialog,
     PostcardBell,
+    ConnectionBanner,
     PaintBlock,
   ],
   templateUrl: './app.html',

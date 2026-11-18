@@ -1,10 +1,12 @@
 import { MARK_ID } from '../src/app/core/wall-limits';
 import type { Env } from './env';
 import { alertKey } from './alerts';
-import { HttpError, json, readJson, safeEqual } from './http';
-import { POSTCARD_COLUMNS, PostcardRow, image, toPublic } from './postcards';
+import { HttpError, json, readJson, recentCount, safeEqual, tryRecord, visitorHash } from './http';
+import { MAX_PENDING, POSTCARD_COLUMNS, PostcardRow, image, toPublic } from './postcards';
 
 const MAX_CONTENT_BYTES = 200_000;
+/** Wrong admin keys allowed per network per hour before it is locked out for the rest of the hour. */
+const FAILED_LOGINS_PER_HOUR = 10;
 
 /**
  * Owner-only routes, protected by the ADMIN_KEY secret
@@ -24,7 +26,13 @@ const MAX_CONTENT_BYTES = 200_000;
 export async function admin(req: Request, env: Env, rest: string[]): Promise<Response> {
   if (!env.ADMIN_KEY) throw new HttpError(503, 'Admin is not set up yet: add the ADMIN_KEY secret.');
   const given = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (!given || !safeEqual(given, env.ADMIN_KEY)) throw new HttpError(401, 'Wrong admin key.');
+  const who = await visitorHash(req, env);
+  const tooMany = 'Too many wrong keys from this network — please try again in an hour.';
+  if ((await recentCount(env, who, 'admin-fail', 3600_000)) >= FAILED_LOGINS_PER_HOUR) throw new HttpError(429, tooMany);
+  if (!given || !safeEqual(given, env.ADMIN_KEY)) {
+    await tryRecord(env, who, 'admin-fail', FAILED_LOGINS_PER_HOUR, 3600_000);
+    throw new HttpError(401, 'Wrong admin key.');
+  }
 
   const [area, id, sub] = rest;
   const method = req.method;
@@ -37,9 +45,10 @@ export async function admin(req: Request, env: Env, rest: string[]): Promise<Res
       const status = new URL(req.url).searchParams.get('status') ?? 'pending';
       if (!['pending', 'approved', 'hidden'].includes(status)) throw new HttpError(400, 'Unknown status.');
       const { results } = await env.DB.prepare(
-        `SELECT ${POSTCARD_COLUMNS} FROM postcards WHERE status = ? ORDER BY created_at DESC LIMIT 100`,
+        `SELECT ${POSTCARD_COLUMNS} FROM postcards WHERE status = ? ORDER BY created_at DESC LIMIT ?`,
       )
-        .bind(status)
+        // Room for the whole review queue, so no waiting card is ever hidden.
+        .bind(status, MAX_PENDING)
         .all<PostcardRow>();
       return json(
         results.map((r) => ({
@@ -54,11 +63,13 @@ export async function admin(req: Request, env: Env, rest: string[]): Promise<Res
     if (id && !sub && method === 'POST') {
       const { status } = await readJson<{ status?: string }>(req);
       if (!status || !['pending', 'approved', 'hidden'].includes(status)) throw new HttpError(400, 'Unknown status.');
-      await env.DB.prepare('UPDATE postcards SET status = ? WHERE id = ?').bind(status, id).run();
+      const result = await env.DB.prepare('UPDATE postcards SET status = ? WHERE id = ?').bind(status, id).run();
+      if (!result.meta.changes) throw new HttpError(404, 'That postcard no longer exists.');
       return json({ ok: true });
     }
     if (id && !sub && method === 'DELETE') {
-      await env.DB.prepare('DELETE FROM postcards WHERE id = ?').bind(id).run();
+      const result = await env.DB.prepare('DELETE FROM postcards WHERE id = ?').bind(id).run();
+      if (!result.meta.changes) throw new HttpError(404, 'That postcard no longer exists.');
       return json({ ok: true });
     }
   }
@@ -66,7 +77,8 @@ export async function admin(req: Request, env: Env, rest: string[]): Promise<Res
   if ((area === 'mural' || area === 'splashes') && id && method === 'DELETE') {
     if (!MARK_ID.test(id)) throw new HttpError(400, 'Invalid id.');
     const table = area === 'mural' ? 'mural_claims' : 'splashes';
-    await env.DB.prepare(`DELETE FROM ${table} WHERE id = ?`).bind(id).run();
+    const result = await env.DB.prepare(`DELETE FROM ${table} WHERE id = ?`).bind(id).run();
+    if (!result.meta.changes) throw new HttpError(404, 'That mark is already gone.');
     return json({ ok: true });
   }
 

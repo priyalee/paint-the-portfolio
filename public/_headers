@@ -1,0 +1,7 @@
+# Cloudflare Pages response headers for the site's pages and files.
+# Stops other sites from showing this site inside a frame (clickjacking).
+/*
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff

@@ -35,8 +35,9 @@ export class ContentStore {
 
   async load(): Promise<void> {
     if (this.apiStatus.available()) {
+      // 204 (nothing published yet) comes back as ok with no data: use content.json then.
       const live = await api<unknown>('/content');
-      if (live.ok) {
+      if (live.ok && live.data && typeof live.data === 'object') {
         this.published.set(normalizePortfolio(live.data, PORTFOLIO));
         return;
       }
@@ -127,11 +128,11 @@ function int(v: unknown, fallback: number, min: number, max: number): number {
   return Number.isFinite(n) ? Math.round(Math.min(max, Math.max(min, n))) : fallback;
 }
 
-/** Only http(s), mailto and site-relative links survive — no javascript: etc. */
+/** Only http(s), mailto and site-relative links survive — no javascript:, and no backslashes (browsers read `/\x` as `//x`). */
 export function safeUrl(v: unknown): string {
   const s = typeof v === 'string' ? v.trim() : '';
   if (!s) return '';
-  if (/^(https?:\/\/|mailto:|\/(?!\/))/i.test(s)) return s.slice(0, 500);
+  if (/^(https?:\/\/|mailto:|\/(?![\/\\]))/i.test(s) && !s.includes('\\')) return s.slice(0, 500);
   if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(s)) return 'https://' + s.slice(0, 490);
   return '';
 }

@@ -40,7 +40,9 @@ export async function readJson<T = Record<string, unknown>>(req: Request, maxByt
 export function cleanText(value: unknown, max: number): string {
   if (typeof value !== 'string') return '';
   return value
-    .replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/g, ' ')
+    // Control characters, zero-width and direction-changing marks (incl. the
+    // isolates U+2066-2069, word joiners U+2060-2064 and the BOM U+FEFF).
+    .replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, max);
@@ -76,15 +78,30 @@ export function randomToken(): string {
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Salted hash of the visitor's IP: enough to rate-limit, without storing the address. */
+/**
+ * Salted hash of the visitor's network: enough to rate-limit, without storing the address.
+ * IPv6 visitors are grouped by their /64 prefix, because one home or phone can
+ * switch between many addresses inside it.
+ */
 export async function visitorHash(req: Request, env: Env): Promise<string> {
   const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'local';
-  return sha256(`${env.IP_SALT ?? 'ink-pigment'}:${ip}`);
+  return sha256(`${env.IP_SALT ?? 'ink-pigment'}:${networkOf(ip.split(',')[0].trim())}`);
+}
+
+/** The IPv4 address as is, or the first four groups (the /64 prefix) of an IPv6 address. */
+export function networkOf(ip: string): string {
+  if (!ip.includes(':')) return ip;
+  const [head, tail = ''] = ip.toLowerCase().split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const groups = ip.includes('::') ? [...left, ...Array<string>(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right] : left;
+  return groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, '')).join(':') + '::/64';
 }
 
 /**
  * Allows at most `max` writes of one kind per visitor in `windowMs`.
- * Old log rows are pruned on the way.
+ * The check and the log entry are one SQL statement, so requests sent at the
+ * same moment can't all slip past the count.
  */
 export async function rateLimit(
   env: Env,
@@ -92,16 +109,31 @@ export async function rateLimit(
   kind: string,
   max: number,
   windowMs: number,
+  message = 'Lots of paint today! Please wait a little and try again.',
 ): Promise<void> {
+  if (!(await tryRecord(env, who, kind, max, windowMs))) throw new HttpError(429, message);
+}
+
+/** Logs one event of `kind` unless the visitor already has `max` in the window; false when refused. Prunes old rows. */
+export async function tryRecord(env: Env, who: string, kind: string, max: number, windowMs: number): Promise<boolean> {
   const now = Date.now();
-  const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM write_log WHERE ip_hash = ? AND kind = ? AND at > ?')
-    .bind(who, kind, now - windowMs)
-    .first<{ n: number }>();
-  if ((row?.n ?? 0) >= max) throw new HttpError(429, 'Lots of paint today! Please wait a little and try again.');
-  await env.DB.batch([
-    env.DB.prepare('INSERT INTO write_log (ip_hash, kind, at) VALUES (?, ?, ?)').bind(who, kind, now),
+  const [insert] = await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO write_log (ip_hash, kind, at)
+       SELECT ?1, ?2, ?3
+       WHERE (SELECT COUNT(*) FROM write_log WHERE ip_hash = ?1 AND kind = ?2 AND at > ?4) < ?5`,
+    ).bind(who, kind, now, now - windowMs, max),
     env.DB.prepare('DELETE FROM write_log WHERE at < ?').bind(now - 2 * 24 * 3600_000),
   ]);
+  return !!insert.meta.changes;
+}
+
+/** How many events of `kind` the visitor has in the window (without logging one). */
+export async function recentCount(env: Env, who: string, kind: string, windowMs: number): Promise<number> {
+  const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM write_log WHERE ip_hash = ? AND kind = ? AND at > ?')
+    .bind(who, kind, Date.now() - windowMs)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
 }
 
 /** Constant-time string comparison (for the admin key). */

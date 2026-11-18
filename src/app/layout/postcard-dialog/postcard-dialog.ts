@@ -112,7 +112,7 @@ import { Icon } from '@shared/ui/icon';
         </div>
 
         <div class="actions">
-          <button type="button" class="btn" (click)="postcard.download()" [disabled]="!postcard.ready()">
+          <button type="button" class="btn" (click)="postcard.download()" [disabled]="!postcard.ready() || postcard.downloading()">
             <app-icon name="download" /> Download both sides
           </button>
           @if (postcard.canSend()) {
@@ -413,7 +413,7 @@ export class PostcardDialog {
   /** Redraws the back shortly after typing stops. */
   protected redraw(): void {
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => void this.postcard.render('back'), 250);
+    this.timer = setTimeout(() => this.postcard.redraw('back'), 250);
   }
 
   /** Clicking the dimmed backdrop closes the preview. */

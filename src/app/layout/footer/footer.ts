@@ -42,7 +42,7 @@ import { Icon } from '@shared/ui/icon';
       padding: 40px 0 120px;
     }
     /* Phones: the paint dock is two rows tall there, so leave more room. */
-    @media (max-width: 720px) {
+    @media (max-width: 860px) {
       :host {
         padding-bottom: 160px;
       }

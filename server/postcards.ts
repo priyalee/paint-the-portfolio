@@ -9,6 +9,12 @@ import { HttpError, cleanMultiline, cleanText, json, rateLimit, readJson, visito
 const MAX_IMAGE_BYTES = 800_000;
 const POSTCARDS_PER_HOUR = 3;
 const RACK_SIZE = 24;
+/**
+ * Most postcards that can wait for review at once (about 1.6 MB each at most).
+ * New ones are refused until the owner approves, hides or deletes some, so a
+ * flood can't fill the database.
+ */
+export const MAX_PENDING = 200;
 
 export interface PostcardRow {
   id: string;
@@ -58,7 +64,8 @@ export async function postcards(req: Request, env: Env, rest: string[], ctx?: { 
 
   if (req.method === 'POST' && rest.length === 0) {
     const body = await readJson(req, MAX_IMAGE_BYTES * 2 * 1.4 + 4_000);
-    const id = typeof body['id'] === 'string' && MARK_ID.test(body['id']) ? body['id'] : crypto.randomUUID();
+    // Always the server's own id, so a reused one can't silently drop a card.
+    const id = crypto.randomUUID();
     const front = decodeImage(body['image']);
     // Older copies of the site only send the front.
     const back = body['back'] === undefined ? null : decodeImage(body['back']);
@@ -67,12 +74,17 @@ export async function postcards(req: Request, env: Env, rest: string[], ctx?: { 
     const who = await visitorHash(req, env);
     await rateLimit(env, who, 'postcard', POSTCARDS_PER_HOUR, 3600_000);
 
-    await env.DB.prepare(
+    // One statement: refused when the review queue is already full.
+    const result = await env.DB.prepare(
       `INSERT INTO postcards (id, message, sender, image, image_type, back, back_type, status, created_at, ip_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?) ON CONFLICT DO NOTHING`,
+       SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9
+       WHERE (SELECT COUNT(*) FROM postcards WHERE status = 'pending') < ?10`,
     )
-      .bind(id, message, sender, front.bytes, front.type, back?.bytes ?? null, back?.type ?? null, Date.now(), who)
+      .bind(id, message, sender, front.bytes, front.type, back?.bytes ?? null, back?.type ?? null, Date.now(), who, MAX_PENDING)
       .run();
+    if (!result.meta.changes) {
+      throw new HttpError(503, 'The postcard box is full right now — please try again in a day or two.');
+    }
 
     const mail = notifyOwner(env, sender, message);
     if (ctx) ctx.waitUntil(mail);
@@ -95,7 +107,8 @@ export async function image(env: Env, id: string, admin: boolean, back = false):
   return new Response(bytes, {
     headers: {
       'content-type': row.image_type,
-      'cache-control': admin ? 'private, no-store' : 'public, max-age=86400',
+      // Short cache, so a card the owner hides disappears for visitors within the hour.
+      'cache-control': admin ? 'private, no-store' : 'public, max-age=3600',
       'x-content-type-options': 'nosniff',
     },
   });

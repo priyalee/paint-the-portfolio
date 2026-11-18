@@ -62,6 +62,7 @@ export class BrushReveal {
   private dpr = 1;
   private coverageTimer?: ReturnType<typeof setTimeout>;
   private celebrated = false;
+  private buildId = 0;
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -83,6 +84,10 @@ export class BrushReveal {
       this.resize();
     });
 
+    destroyRef.onDestroy(() => {
+      clearTimeout(this.coverageTimer);
+      this.buildId++;
+    });
     destroyRef.onDestroy(
       inject(Postcard).register({ id: 'hero', order: 0, snapshot: () => this.snapshot() }),
     );
@@ -162,11 +167,14 @@ export class BrushReveal {
       )
       .join('');
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 2}" height="${h * 2}">${body}</svg>`;
+    const id = ++this.buildId;
     try {
-      this.colorImg = await loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+      const img = await loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+      if (id !== this.buildId) return;
+      this.colorImg = img;
       this.redraw();
     } catch {
-      this.colorImg = null;
+      if (id === this.buildId) this.colorImg = null;
     }
   }
 

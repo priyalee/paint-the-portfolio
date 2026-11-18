@@ -20,6 +20,10 @@
   box-shadow: -8px 0 0 color-mix(in srgb, var(--ink) 12%, transparent);
   animation: slide-in 0.35s var(--ease);
   font-size: 15px;
+
+  &:focus {
+    outline: none;
+  }
 }
 
 @keyframes slide-in {

@@ -68,6 +68,8 @@ export class Postcard {
   readonly canSend = inject(ApiStatus).available;
   readonly sending = signal(false);
   readonly sendError = signal('');
+  /** Saving the PNG. */
+  readonly downloading = signal(false);
 
   private images: CanvasImageSource[] = [];
   private front: HTMLCanvasElement | null = null;
@@ -85,6 +87,7 @@ export class Postcard {
   async open(): Promise<void> {
     if (this.busy() || this.isOpen()) return;
     this.busy.set(true);
+    this.sendError.set('');
     try {
       // Canvas text only uses a web font once it is loaded, so load the card's fonts first.
       await Promise.all(
@@ -134,17 +137,22 @@ export class Postcard {
   setPaper(paper: CardPaper): void {
     if (paper === this.paper()) return;
     this.paper.set(paper);
-    void this.render();
+    this.redraw();
   }
 
   setStamp(hex: string): void {
     if (!HEX_COLOR.test(hex)) return;
     this.stamp.set(hex.toUpperCase());
     this.side.set('back');
-    void this.render('back');
+    this.redraw('back');
   }
 
   // ----------------------------------------------------------- rendering
+
+  /** render() for fire-and-forget callers: a failed redraw keeps the last preview. */
+  redraw(which: 'both' | 'back' = 'both'): void {
+    this.render(which).catch((err) => console.error(err));
+  }
 
   /** Redraws the card. Only the back changes when the message, name or stamp do. */
   async render(which: 'both' | 'back' = 'both'): Promise<void> {
@@ -173,8 +181,21 @@ export class Postcard {
 
   /** Saves one PNG with the front above the back. */
   async download(): Promise<void> {
-    if (!this.front || !this.back) return;
-    downloadBlob(await canvasToBlob(stackSides(this.front, this.back)), `${this.basename()}.png`);
+    if (!this.front || !this.back || this.downloading()) return;
+    this.downloading.set(true);
+    this.sendError.set('');
+    try {
+      downloadBlob(await canvasToBlob(stackSides(this.front, this.back)), `${this.basename()}.png`);
+    } catch (err) {
+      console.error(err);
+      // The toast sits behind the open dialog, so show the error inside it too.
+      const text = 'Could not save the postcard — please try again.';
+      if (this.isOpen()) this.sendError.set(text);
+      else this.flash(text);
+      return;
+    } finally {
+      this.downloading.set(false);
+    }
     this.remember();
     this.flash('Postcard saved to your downloads');
     this.close();
@@ -212,14 +233,14 @@ export class Postcard {
         },
       });
       if (!res.ok) {
-        this.sendError.set(res.reason);
+        if (this.isOpen()) this.sendError.set(res.reason);
         return;
       }
       this.remember();
       this.flash(`Postcard sent to ${this.ownerName() || 'the studio'}. Thank you!`);
       this.close();
     } catch {
-      this.sendError.set('Could not send the postcard — please try again.');
+      if (this.isOpen()) this.sendError.set('Could not send the postcard — please try again.');
     } finally {
       this.sending.set(false);
     }
@@ -286,7 +307,8 @@ export class Postcard {
     }
   }
 
-  private flash(text: string): void {
+  /** Shows a short message in the paint dock's toast. */
+  flash(text: string): void {
     this.lastMessage.set(text);
     setTimeout(() => this.lastMessage.set(''), 3000);
   }

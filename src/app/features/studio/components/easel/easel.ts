@@ -49,7 +49,7 @@ import { Icon } from '@shared/ui/icon';
             <app-icon name="reset" /> Start over
           </button>
         }
-        <button type="button" class="btn" (click)="download()">
+        <button type="button" class="btn" (click)="download()" [disabled]="downloading()">
           <app-icon name="download" /> Download PNG
         </button>
       </div>
@@ -111,6 +111,8 @@ export class Easel {
   private readonly canvas = viewChild.required(ArtCanvas);
   /** "Start over" asks first, since it clears the whole page at once. */
   protected readonly confirming = signal(false);
+  protected readonly downloading = signal(false);
+  private readonly postcard = inject(Postcard);
 
   protected readonly percent = computed(() =>
     Math.round(this.state.progressFor('studio', this.art().id + ':').ratio * 100),
@@ -129,7 +131,7 @@ export class Easel {
       this.confirming.set(false);
     });
     inject(DestroyRef).onDestroy(
-      inject(Postcard).register({
+      this.postcard.register({
         id: 'studio',
         order: 0,
         snapshot: () => this.canvas().snapshot(),
@@ -138,15 +140,24 @@ export class Easel {
   }
 
   protected async download(): Promise<void> {
-    const img = await this.canvas().snapshot(3);
-    const c = document.createElement('canvas');
-    c.width = img.naturalWidth;
-    c.height = img.naturalHeight;
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
-    ctx.fillStyle = cssVar('--paper');
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.drawImage(img, 0, 0);
-    downloadBlob(await canvasToBlob(c), `${this.art().id}-painting.png`);
+    if (this.downloading()) return;
+    this.downloading.set(true);
+    try {
+      const img = await this.canvas().snapshot(3);
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext('2d');
+      if (!ctx) throw new Error('Canvas unavailable');
+      ctx.fillStyle = cssVar('--paper');
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0);
+      downloadBlob(await canvasToBlob(c), `${this.art().id}-painting.png`);
+    } catch (err) {
+      console.error(err);
+      this.postcard.flash('Could not save the painting — please try again.');
+    } finally {
+      this.downloading.set(false);
+    }
   }
 }

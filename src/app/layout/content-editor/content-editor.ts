@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { ContentStore } from '@core/content-store';
 import { Icon } from '@shared/ui/icon';
 import { EditorSession } from './editor-session';
@@ -44,11 +55,16 @@ export class ContentEditor {
     { id: 'files', label: 'Import & export' },
   ];
   protected readonly tab = signal<Tab>('basics');
+  private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly injector = inject(Injector);
+  /** Where focus was before the panel opened, to hand it back on close. */
+  private returnFocus: HTMLElement | null = null;
 
   constructor() {
-    // Fresh working copy each time the panel opens.
+    // Fresh working copy each time the panel opens (not on every edit), and move focus in and back out.
     effect(() => {
-      if (this.store.editorOpen()) this.session.reload();
+      const open = this.store.editorOpen();
+      untracked(() => (open ? this.onOpen() : this.onClose()));
     });
     if (new URLSearchParams(location.search).has('edit')) this.store.editorOpen.set(true);
   }
@@ -58,8 +74,23 @@ export class ContentEditor {
       e.preventDefault();
       this.store.editorOpen.update((o) => !o);
     } else if (e.key === 'Escape' && this.store.editorOpen()) {
+      // A postcard or rack viewer on top handles its own Escape.
+      if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
       this.close();
     }
+  }
+
+  private onOpen(): void {
+    this.session.reload();
+    const active = document.activeElement;
+    this.returnFocus = active instanceof HTMLElement && active !== document.body ? active : null;
+    afterNextRender(() => this.panel()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  private onClose(): void {
+    const el = this.returnFocus;
+    this.returnFocus = null;
+    if (el?.isConnected) el.focus();
   }
 
   protected close(): void {

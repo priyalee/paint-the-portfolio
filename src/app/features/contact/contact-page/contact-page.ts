@@ -22,9 +22,11 @@ import { SocialLinks } from '../components/social-links/social-links';
             accent="colourful"
           />
           <p class="lede">Have a project, a role or just want to say hi? My inbox is always open.</p>
-          <a class="btn mail" [href]="'mailto:' + data().email">
-            <app-icon name="mail" /> {{ data().email }}
-          </a>
+          @if (data().email.trim(); as email) {
+            <a class="btn mail" [href]="'mailto:' + email">
+              <app-icon name="mail" /> {{ email }}
+            </a>
+          }
           <app-social-links [links]="data().socials" />
           <app-postcard-cta />
         </div>

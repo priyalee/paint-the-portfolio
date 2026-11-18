@@ -83,6 +83,7 @@ export class PostcardQueue {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   private urls: string[] = [];
+  private loadId = 0;
 
   constructor() {
     // The postcard bell was clicked while the office is open: show the waiting cards fresh.
@@ -91,7 +92,10 @@ export class PostcardQueue {
       if (this.alerts.reviewRequests() !== opened) untracked(() => this.show('pending'));
     });
     void this.load();
-    inject(DestroyRef).onDestroy(() => this.revoke());
+    inject(DestroyRef).onDestroy(() => {
+      this.loadId++;
+      this.revoke();
+    });
   }
 
   protected show(status: Status): void {
@@ -114,16 +118,18 @@ export class PostcardQueue {
   }
 
   private async load(): Promise<void> {
+    const id = ++this.loadId;
     this.loading.set(true);
     this.error.set('');
     this.revoke();
     const res = await this.session.call<QueueCard[]>(`/admin/postcards?status=${this.status()}`);
+    if (id !== this.loadId) return;
     if (!res.ok) {
       this.error.set(res.reason);
       this.cards.set([]);
     } else {
       const withImages = await Promise.all(
-        res.data.map(async (c) => {
+        (Array.isArray(res.data) ? res.data : []).map(async (c) => {
           const [src, backSrc] = await Promise.all([
             this.session.image(c.imageUrl),
             c.backUrl ? this.session.image(c.backUrl) : null,
@@ -131,7 +137,12 @@ export class PostcardQueue {
           return { ...c, src, backSrc };
         }),
       );
-      this.urls = withImages.flatMap((c) => [c.src, c.backSrc]).filter((u): u is string => !!u);
+      const urls = withImages.flatMap((c) => [c.src, c.backSrc]).filter((u): u is string => !!u);
+      if (id !== this.loadId) {
+        urls.forEach((u) => URL.revokeObjectURL(u));
+        return;
+      }
+      this.urls = urls;
       this.cards.set(withImages);
     }
     this.loading.set(false);

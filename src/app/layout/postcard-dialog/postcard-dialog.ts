@@ -334,6 +334,17 @@ import { Icon } from '@shared/ui/icon';
       clip: rect(0 0 0 0);
       white-space: nowrap;
     }
+    /* Touch screens: 44px tap targets, like the rest of the site. */
+    @media (pointer: coarse) {
+      .sides button,
+      .toggle button {
+        height: 44px;
+      }
+      .swatch {
+        width: 44px;
+        height: 44px;
+      }
+    }
     .actions {
       display: flex;
       flex-wrap: wrap;

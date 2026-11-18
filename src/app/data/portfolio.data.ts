@@ -207,7 +207,7 @@ export const PORTFOLIO: Portfolio = {
   ],
   projects: [
     {
-      title: 'Studio Priyalee',
+      title: "Priyalee's Studio",
       year: '2026',
       tagline: 'A portfolio you paint, not just scroll',
       description:

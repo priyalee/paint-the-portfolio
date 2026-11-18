@@ -1,4 +1,4 @@
-# Studio Priyalee
+# Priyalee's Studio
 
 **A black-and-white portfolio that visitors colour in.**
 

@@ -153,7 +153,7 @@
   ],
   "projects": [
     {
-      "title": "Studio Priyalee",
+      "title": "Priyalee's Studio",
       "year": "2026",
       "tagline": "A portfolio you paint, not just scroll",
       "description": "Every page starts as a line drawing and fills with the colours a visitor picks. It has a community mural, a splash wall and postcards, running on a serverless Cloudflare Pages Functions and D1 backend with rate limiting and an admin area.",

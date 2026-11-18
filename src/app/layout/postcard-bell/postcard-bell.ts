@@ -26,7 +26,8 @@ import { Icon } from '@shared/ui/icon';
       position: fixed;
       top: calc(var(--nav-h, 72px) + 12px);
       right: 16px;
-      z-index: 55;
+      /* Just under the top bar, so the phone menu (which drops down from it) covers the bell. */
+      z-index: 49;
     }
     .bell {
       position: relative;

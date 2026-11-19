@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   afterNextRender,
   computed,
@@ -14,7 +15,7 @@ import { reducedMotion } from '@core/paint-state';
 import { Reveal } from '@shared/directives/reveal.directive';
 import { PaintBlock } from '@shared/paint/paint-block.directive';
 import { SectionHeader } from '@shared/ui/section-header';
-import { BrushSpine } from '../components/brush-spine/brush-spine';
+import { BrushSpine, SCROLL_DRIVEN } from '../components/brush-spine/brush-spine';
 import { TimelineEntry } from '../components/timeline-entry/timeline-entry';
 
 /** Experience timeline whose spine is a brush stroke drawn as you scroll. */
@@ -61,11 +62,28 @@ export class JourneyPage {
   protected readonly progress = signal(0);
   private readonly timeline = viewChild.required<ElementRef<HTMLElement>>('timeline');
 
+  private frame = 0;
+
   constructor() {
-    afterNextRender(() => this.measure());
+    afterNextRender(() => this.update());
+    inject(DestroyRef).onDestroy(() => cancelAnimationFrame(this.frame));
   }
 
+  /**
+   * Fallback for browsers without scroll-driven animations. Scroll and resize
+   * fire many times per frame on phones, so the stroke is updated once per frame.
+   */
   protected measure(): void {
+    // The browser draws the stroke from the scroll position itself (see BrushSpine).
+    if (SCROLL_DRIVEN && !reducedMotion()) return;
+    if (this.frame) return;
+    this.frame = requestAnimationFrame(() => {
+      this.frame = 0;
+      this.update();
+    });
+  }
+
+  private update(): void {
     if (reducedMotion()) {
       this.progress.set(1);
       return;

@@ -39,6 +39,8 @@ Built with **Angular 21**: standalone components, signals, zoneless change detec
 | **Community wall** | Visitors paint one shape of a shared city mural, or throw one splash of paint, sign it, and can edit it later. Everyone sees the same wall. |
 | **Colouring studio** | Free colouring pages that you can save as images. |
 | **Undo / redo and saving** | Every fill can be undone and redone, and progress is kept in the visitor's browser. |
+| **Works offline** | Painting keeps working without a connection. A small "You're offline" note appears under the top bar, checks again on its own and says "Back online" when the connection returns. A page change that failed while offline finishes by itself once the site can be reached. |
+| **Always the latest version** | A tab opened before a new deploy reloads once to the page the visitor wanted, so it never gets stuck asking for code that no longer exists. |
 
 ---
 
@@ -131,7 +133,7 @@ Without the backend you can still click **Download content.json** and replace `p
 | `Esc` | Close the menu, the editor, the postcard or the postcard viewer |
 | `←` / `→` | Previous / next card in the postcard viewer |
 
-Paint shortcuts are paused while you type in a box or while the postcard / postcard viewer is open.
+Paint shortcuts are paused while you type in a box, or while the postcard, the postcard viewer or the content editor is open.
 
 All of these tools are also in the **paint dock** at the bottom of the screen, along with the postcard button. The theme and Mono / Colour toggles are in the navbar.
 
@@ -144,7 +146,8 @@ src/app/
 ├── core/        app-wide services and logic, no UI
 │                paint-state, content-store, celebration, postcard,
 │                chapters, palettes, mural-store, splash-store, title-strategy,
-│                api (backend status + fetch helper), edit-tokens, wall-limits
+│                api (backend status + fetch helper), connection (online / offline),
+│                postcard-alerts, edit-tokens, wall-limits
 ├── data/        content types and the built-in placeholder content
 ├── shared/      building blocks reused across pages
 │   ├── art/         line-art definitions (scenes, portrait, mural city, splats)
@@ -153,7 +156,8 @@ src/app/
 │   └── ui/          icon, section header
 ├── layout/      the app shell
 │                navbar, paint-dock, footer, page-nav, celebration-layer,
-│                postcard-dialog, content-editor (one component per tab)
+│                postcard-dialog, postcard-bell, connection-banner,
+│                content-editor (one component per tab)
 └── features/    one folder per page, each with its own components
     ├── home/      hero, brush-reveal, chapter-card
     ├── about/     portrait-card, fact-list
@@ -168,7 +172,8 @@ src/app/
 
 server/          the backend: router, walls, postcards, admin (Cloudflare Pages Functions)
 functions/api/   the one function file that sends every /api request to server/
-migrations/      database tables (Cloudflare D1)
+migrations/      database tables and indexes (Cloudflare D1)
+public/_headers  security headers Cloudflare Pages adds to every response
 ```
 
 - **Import aliases:** `@core/…`, `@shared/…`, `@layout/…`, `@features/…` and `@data/…`, defined in `tsconfig.json`.
@@ -191,8 +196,13 @@ The backend runs on **Cloudflare**: the site is served by **Cloudflare Pages**, 
 **Safety built in**
 
 - Each mark gets a secret **edit token** that only the painter's browser keeps (the database stores a hash), so only they can edit it.
-- **Rate limits** per visitor: 12 wall writes and 3 postcards per hour. Visitor IPs are only stored as salted hashes.
+- **Rate limits** per visitor: 12 wall writes and 3 postcards per hour. Visitor IPs are only stored as salted hashes. IPv6 visitors are grouped by their /64 network, because one home or phone can switch between many addresses inside it.
 - **One mark per visitor:** each browser can paint one mural shape and throw one splash. The server also caps each wall at 3 marks per network, so clearing the browser doesn't allow more, while people sharing one Wi-Fi can still each leave theirs. If you remove a mark in `/admin`, that visitor can paint again.
+- Every limit is checked in the same database statement that saves the mark, so a burst of requests sent at the same moment can't slip past it.
+- **Size caps,** so spam can't fill the database: at most **200 postcards** wait for review at once (new ones are refused until you approve, hide or delete some), and the splash wall keeps at most **1,500 splashes**.
+- **Admin lockout:** after 10 wrong admin keys from one network, `/admin` refuses that network for up to an hour.
+- Approved postcard images are cached for an hour at most, so a card you hide disappears for visitors soon after.
+- Other sites can't show this site inside a frame (clickjacking protection), set in `public/_headers`.
 - Every name, city and message is cleaned and length-limited on the server, using the same limits as the site (`src/app/core/wall-limits.ts`).
 - Postcard images are checked to be real JPEG/PNG/WebP files and capped at 800 KB per side.
 - Writes are only accepted from the site's own origin. Admin routes need the `ADMIN_KEY` secret.
@@ -202,10 +212,11 @@ The backend runs on **Cloudflare**: the site is served by **Cloudflare Pages**, 
 | Method & path | Purpose |
 |---|---|
 | `GET /api/health` | Lets the site know the backend is up |
-| `GET /api/content` | Published content |
+| `GET /api/content` | Published content, or `204 No Content` when nothing is published yet (the site then uses `public/content.json`) |
 | `GET` / `POST /api/mural`, `PATCH /api/mural/:id` | List, paint and edit mural shapes |
 | `GET` / `POST /api/splashes`, `PATCH /api/splashes/:id` | List, throw and edit splashes |
 | `GET` / `POST /api/postcards`, `GET /api/postcards/:id/image` and `/back` | The rack, sending a postcard, the front and back of approved cards |
+| `GET /api/alerts` | Count and previews of waiting postcards, for the owner's bell (needs the alert key) |
 | `/api/admin/…` | Postcard review, removing wall marks, publishing content (needs the admin key) |
 
 ### Running it locally
@@ -250,7 +261,8 @@ openssl rand -hex 32 | npx wrangler pages secret put IP_SALT --project-name ink-
 After that, **every push deploys itself** through GitHub Actions (`.github/workflows/deploy.yml`):
 
 - a push to `main` updates the live site, and applies any new files in `migrations/` first
-- a push to any other branch gets its own preview link
+- pushes to other branches are **not** deployed: a preview would share the live database, so anyone could write to the real walls through the preview address
+- to redeploy `main` without a new push, open **Actions → Deploy → Run workflow** on GitHub
 
 The workflow needs one repository secret, under **Settings → Secrets and variables → Actions**: `CLOUDFLARE_API_TOKEN`, made in Cloudflare → My Profile → API Tokens → Create Token, with **Cloudflare Pages: Edit** and **D1: Edit**. The Cloudflare account id is written in the workflow itself (it isn't private); if you fork this, put yours there (`npx wrangler whoami` shows it).
 

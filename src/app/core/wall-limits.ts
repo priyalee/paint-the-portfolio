@@ -15,6 +15,19 @@ export const SPLASH_WALL = { width: 1000, height: 560 } as const;
 /** Splash radius in wall units: small, so the wall has room for lots of visitors. */
 export const SPLASH_SIZE = { min: 12, max: 36 } as const;
 
+/** Shown on the walls when a visitor leaves no real name. */
+export const ANONYMOUS = 'Anonymous';
+
+/**
+ * The name to show on the walls: as typed, or "Anonymous" when it has no
+ * letter or number at all (e.g. "***" or "..."), which would read like a
+ * hidden or broken name. Letters in any script count.
+ */
+export function wallName(name: string): string {
+  const trimmed = name.trim();
+  return /[\p{L}\p{N}]/u.test(trimmed) ? trimmed : ANONYMOUS;
+}
+
 export const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 /** Ids are made in the browser (crypto.randomUUID) so the visitor can remember them. */
 export const MARK_ID = /^[A-Za-z0-9-]{8,64}$/;

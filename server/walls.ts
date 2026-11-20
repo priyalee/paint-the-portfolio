@@ -6,6 +6,7 @@ import {
   MAX_PLACE,
   SPLASH_SIZE,
   SPLASH_WALL,
+  wallName,
 } from '../src/app/core/wall-limits';
 import type { Env } from './env';
 import {
@@ -56,7 +57,7 @@ function readSignature(body: Record<string, unknown>): Signature {
   if (!HEX_COLOR.test(color)) throw new HttpError(400, 'That colour could not be used.');
   return {
     color: color.toLowerCase(),
-    name: cleanText(body['name'], MAX_NAME) || 'Anonymous',
+    name: wallName(cleanText(body['name'], MAX_NAME)),
     place: cleanText(body['place'], MAX_PLACE),
   };
 }
@@ -78,7 +79,8 @@ export async function mural(req: Request, env: Env, rest: string[]): Promise<Res
         id: r.id,
         regionId: r.region_id,
         color: r.color,
-        name: r.name,
+        // wallName also tidies marks saved before symbol-only names were turned away.
+        name: wallName(r.name),
         place: r.place,
         createdAt: r.created_at,
       })),
@@ -155,7 +157,7 @@ export async function splashes(req: Request, env: Env, rest: string[]): Promise<
       place: string;
       created_at: number;
     }>();
-    return json(results.map(({ created_at, ...s }) => ({ ...s, createdAt: created_at })));
+    return json(results.map(({ created_at, name, ...s }) => ({ ...s, name: wallName(name), createdAt: created_at })));
   }
 
   if (req.method === 'POST' && rest.length === 0) {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MAX_NAME, MAX_PLACE } from '@core/mural-store';
+import { ANONYMOUS, wallName } from '@core/wall-limits';
 import { Icon } from '@shared/ui/icon';
 
 export interface Signature {
@@ -132,13 +133,13 @@ export class SignForm implements OnInit {
   ngOnInit(): void {
     const sig = this.initial();
     if (!sig) return;
-    this.name.set(sig.name === 'Anonymous' ? '' : sig.name);
+    this.name.set(sig.name === ANONYMOUS ? '' : sig.name);
     this.place.set(sig.place);
   }
 
   protected submit(): void {
     this.sign.emit({
-      name: this.name().trim().slice(0, MAX_NAME) || 'Anonymous',
+      name: wallName(this.name().slice(0, MAX_NAME)),
       place: this.place().trim().slice(0, MAX_PLACE),
     });
   }
